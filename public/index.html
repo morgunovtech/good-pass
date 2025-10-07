@@ -12,96 +12,131 @@
   </head>
   <body>
     <a class="skip-link" href="#password-input">Перейти к проверке пароля</a>
-    <header class="hero" aria-labelledby="page-title">
-      <div class="hero__content">
-        <p class="hero__eyebrow">Образовательный сервис</p>
-        <h1 id="page-title">Соберите пароль, который не сломают за минуту</h1>
-        <p class="hero__lead">
-          Узнайте, сколько времени потребуется на перебор, какие привычки усиливают защиту и
-          какие паттерны наоборот упрощают злоумышленнику задачу.
-        </p>
+    <header class="topbar" aria-labelledby="page-title">
+      <div>
+        <p class="topbar__eyebrow">Good Pass</p>
+        <h1 id="page-title">Проверка стойкости и мастерская паролей</h1>
       </div>
-      <form class="checker" autocomplete="off" novalidate>
-        <label class="checker__label" for="password-input">Ваш пароль</label>
-        <div class="checker__field">
-          <input
-            id="password-input"
-            class="checker__input"
-            type="password"
-            name="password"
-            minlength="1"
-            autocomplete="new-password"
-            placeholder="Например, ЛунаПоюз#2031"
-            aria-describedby="strength-label"
-          />
-          <button type="button" id="toggle-visibility" class="checker__toggle" aria-pressed="false">
-            Показать
-          </button>
-        </div>
-        <p id="strength-label" class="checker__hint">Введите пароль, чтобы начать проверку.</p>
-      </form>
+      <p class="topbar__lead">
+        Оцените пароль, посмотрите время перебора и сразу соберите более надёжную версию.
+      </p>
     </header>
 
-    <main class="layout" aria-live="polite">
-      <section class="panel" aria-label="Результаты анализа">
+    <main class="shell" aria-live="polite">
+      <section class="card card--primary" aria-label="Проверка пароля">
+        <header class="card__header">
+          <h2>Проверка стойкости</h2>
+          <p id="strength-label" class="card__hint">Введите пароль, чтобы начать проверку.</p>
+        </header>
+
+        <form class="checker" autocomplete="off" novalidate>
+          <label class="checker__label" for="password-input">Ваш пароль</label>
+          <div class="checker__field">
+            <input
+              id="password-input"
+              class="checker__input"
+              type="password"
+              name="password"
+              minlength="1"
+              autocomplete="new-password"
+              placeholder="Например, ЛунаПоюз#2031"
+              aria-describedby="strength-label"
+            />
+            <button type="button" id="toggle-visibility" class="checker__toggle" aria-pressed="false">
+              Показать
+            </button>
+          </div>
+        </form>
+
         <div class="meter" role="img" aria-label="Индикатор стойкости">
           <div class="meter__fill" data-strength="0"></div>
         </div>
+
         <dl class="stats">
           <div class="stat">
-            <dt>Оценка стойкости</dt>
+            <dt>Оценка</dt>
             <dd id="score">—</dd>
           </div>
           <div class="stat">
-            <dt>Время брутфорса</dt>
+            <dt>Время перебора</dt>
             <dd id="time" title=""></dd>
             <dd class="stat__note">1&nbsp;000&nbsp;000&nbsp;000 попыток в секунду.</dd>
           </div>
           <div class="stat">
             <dt>Энтропия</dt>
             <dd id="entropy">—</dd>
-            <dd class="stat__note">Чем больше бит — тем дольше подбор.</dd>
+            <dd class="stat__note">Чем больше бит — тем сложнее подбор.</dd>
           </div>
         </dl>
+
+        <div class="insights" aria-label="Рекомендации">
+          <article>
+            <h3>Что уже хорошо</h3>
+            <ul id="strengths" class="list" aria-live="polite"></ul>
+          </article>
+          <article>
+            <h3>Что усилить</h3>
+            <ul id="weaknesses" class="list" aria-live="polite"></ul>
+          </article>
+        </div>
       </section>
 
-      <section class="panel panel--lists" aria-label="Рекомендации">
-        <article>
-          <h2>Что уже хорошо</h2>
-          <ul id="strengths" class="list" aria-live="polite"></ul>
-        </article>
-        <article>
-          <h2>Что стоит улучшить</h2>
-          <ul id="weaknesses" class="list" aria-live="polite"></ul>
-        </article>
+      <section class="card card--generator" aria-label="Генератор стойких паролей">
+        <header class="card__header">
+          <h2>Генератор</h2>
+          <p class="card__hint">Соберите новый пароль и сразу проверьте его стойкость.</p>
+        </header>
+        <form id="generator-form" class="generator" autocomplete="off">
+          <div class="generator__row">
+            <label for="generator-length">Длина</label>
+            <div class="generator__control">
+              <input id="generator-length" type="range" min="8" max="32" value="16" />
+              <output id="generator-length-value" for="generator-length">16</output>
+            </div>
+          </div>
+          <fieldset class="generator__row">
+            <legend>Символы</legend>
+            <label><input type="checkbox" id="generator-uppercase" checked /> Прописные</label>
+            <label><input type="checkbox" id="generator-digits" checked /> Цифры</label>
+            <label><input type="checkbox" id="generator-symbols" /> Спецсимволы</label>
+          </fieldset>
+          <div class="generator__actions">
+            <button type="button" id="generate-password" class="button">Сгенерировать</button>
+            <button type="button" id="copy-generated" class="button button--ghost">Скопировать</button>
+          </div>
+          <div class="generator__output" aria-live="polite">
+            <p id="generated-password" class="generator__password" data-empty="true">Нажмите «Сгенерировать»</p>
+          </div>
+        </form>
       </section>
 
-      <section class="panel panel--guides" aria-label="Памятка по стойким паролям">
-        <article class="guide">
-          <h2>Секреты сильного пароля</h2>
+      <section class="card card--history" aria-label="История проверок">
+        <header class="card__header">
+          <h2>Последние проверки</h2>
+          <p class="card__hint">Мы сохраняем 5 последних оценок только внутри этой вкладки.</p>
+        </header>
+        <ul id="history-list" class="history" aria-live="polite">
+          <li class="history__item history__item--empty">Проверьте пароль, и он появится здесь.</li>
+        </ul>
+      </section>
+
+      <section class="card card--guides" aria-label="Памятка по стойким паролям">
+        <div class="guide">
+          <h2>Быстрый чек-лист</h2>
           <ul>
-            <li>Используйте фразу длиной от 12–16 символов с понятным смыслом.</li>
-            <li>Смешивайте регистр, цифры и удобные спецсимволы.</li>
-            <li>Добавляйте уникальные детали, которые понятны только вам.</li>
-            <li>Храните пароли в менеджере, чтобы не повторять один и тот же.</li>
+            <li>Фраза на 12–16+ символов с понятным смыслом запоминается легче.</li>
+            <li>Миксуйте регистры, цифры и спецсимволы — так растёт набор вариантов.</li>
+            <li>Избегайте очевидных последовательностей, дат и повторов.</li>
+            <li>Для каждого сервиса — свой пароль, менеджер поможет не забыть.</li>
           </ul>
-        </article>
-        <article class="guide">
-          <h2>Что делает пароль слабым</h2>
-          <ul>
-            <li>Последовательности клавиш, даты рождения и популярные слова.</li>
-            <li>Повторение одного символа или простые замены «a» → «4».</li>
-            <li>Использование личных данных, которые легко найти в соцсетях.</li>
-            <li>Повторение одного пароля на разных сайтах.</li>
-          </ul>
-        </article>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
       <p>
         Создавайте длинные, осмысленные фразы и дополняйте их символами — так вы сохраняете и
-        удобство, и стойкость. Менеджер паролей поможет не повторяться.
+        удобство, и стойкость.
       </p>
     </footer>
 
