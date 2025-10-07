@@ -1,0 +1,12 @@
+{
+  "name": "good-pass",
+  "version": "2024.10.07",
+  "description": "Password strength educational web service",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/preview.js",
+    "dev": "node scripts/preview.js --watch",
+    "test": "node --test"
+  },
+  "dependencies": {}
+}
