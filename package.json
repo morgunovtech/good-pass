@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node scripts/preview.js",
     "dev": "node scripts/preview.js --watch",
-    "test": "node --test"
+    "test": "node --test",
+    "build": "node scripts/build.js"
   },
   "dependencies": {}
 }
