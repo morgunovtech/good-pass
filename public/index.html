@@ -27,12 +27,22 @@
             <input
               id="password-input"
               name="password"
-              type="text"
+              type="password"
               minlength="1"
               placeholder="Например, Гроза-Моря#2045"
               aria-live="polite"
+              autocomplete="new-password"
               autofocus
             />
+            <button
+              type="button"
+              class="toggle-visibility"
+              id="toggle-visibility"
+              aria-label="Показать пароль"
+              aria-pressed="false"
+            >
+              Показать
+            </button>
             <span class="input-underline" aria-hidden="true"></span>
           </div>
           <p id="strength-label" class="strength-label">Введите пароль, чтобы начать.</p>
@@ -68,6 +78,26 @@
             <ul id="weaknesses" class="list"></ul>
           </article>
         </div>
+      </section>
+      <section class="education" aria-label="Объяснение критериев стойкости">
+        <article class="education-card">
+          <h2>Что делает пароль хорошим?</h2>
+          <ul>
+            <li>Длина 12–16 символов и больше.</li>
+            <li>Смешанный регистр, цифры и удобные спецсимволы.</li>
+            <li>Фраза, которую легко представить, но сложно угадать.</li>
+            <li>Уникальность для каждого сайта + менеджер паролей.</li>
+          </ul>
+        </article>
+        <article class="education-card">
+          <h2>Что ослабляет пароль?</h2>
+          <ul>
+            <li>Последовательности клавиш и шаблоны вроде «qwerty123».</li>
+            <li>Повторы одного символа или очевидные замены букв цифрами.</li>
+            <li>Даты рождения, имена, любимые команды и прочие личные данные.</li>
+            <li>Повторное использование одного пароля в разных сервисах.</li>
+          </ul>
+        </article>
       </section>
     </main>
     <footer class="footer">
