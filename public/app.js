@@ -1,48 +1,101 @@
 import { analyzePassword } from './passwordAnalyzer.js';
 
-const input = document.getElementById('password-input');
-const strengthLabel = document.getElementById('strength-label');
-const toggleButton = document.getElementById('toggle-visibility');
-const meterFill = document.querySelector('.meter-fill');
-const scoreEl = document.getElementById('score');
-const timeEl = document.getElementById('time');
-const entropyEl = document.getElementById('entropy');
-const strengthsList = document.getElementById('strengths');
-const weaknessesList = document.getElementById('weaknesses');
+const input = document.querySelector('#password-input');
+const toggle = document.querySelector('#toggle-visibility');
+const meterFill = document.querySelector('.meter__fill');
+const strengthLabel = document.querySelector('#strength-label');
+const scoreEl = document.querySelector('#score');
+const timeEl = document.querySelector('#time');
+const entropyEl = document.querySelector('#entropy');
+const strengthsList = document.querySelector('#strengths');
+const weaknessesList = document.querySelector('#weaknesses');
 
-toggleButton?.addEventListener('click', () => {
-  const isHidden = input.type === 'password';
-  input.type = isHidden ? 'text' : 'password';
-  toggleButton.setAttribute('aria-pressed', String(isHidden));
-  toggleButton.textContent = isHidden ? 'Скрыть' : 'Показать';
-  toggleButton.setAttribute('aria-label', isHidden ? 'Скрыть пароль' : 'Показать пароль');
-  input.focus();
-});
+function init() {
+  if (!input) return;
 
-input.addEventListener('input', (event) => {
-  const password = event.target.value;
+  resetView();
 
-  if (!password) {
-    resetResults();
+  input.addEventListener('input', handleAnalyze);
+  input.addEventListener('paste', handleAnalyze);
+
+  toggle?.addEventListener('click', () => {
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    toggle.textContent = isHidden ? 'Скрыть' : 'Показать';
+    toggle.setAttribute('aria-pressed', String(isHidden));
+    toggle.setAttribute('aria-label', isHidden ? 'Скрыть пароль' : 'Показать пароль');
+    input.focus();
+  });
+}
+
+function handleAnalyze() {
+  const value = input.value ?? '';
+
+  if (!value.trim()) {
+    resetView();
     return;
   }
 
-  const result = analyzePassword(password);
-  renderResult(password, result);
-});
+  const result = analyzePassword(value);
+  applyResult(value, result);
+}
 
-function renderResult(password, result) {
-  const strengthLevel = mapScoreToLevel(result.scoreLabel);
-  meterFill.dataset.strength = strengthLevel.toString();
+function applyResult(password, result) {
+  const level = mapScoreToLevel(result.scoreLabel);
+  meterFill.dataset.strength = String(level);
 
-  strengthLabel.textContent = password ? `Пароль: ${result.scoreLabel}` : 'Введите пароль, чтобы начать.';
+  strengthLabel.textContent = password
+    ? `Пароль оценён как: ${result.scoreLabel}`
+    : 'Введите пароль, чтобы начать проверку.';
+
   scoreEl.textContent = result.scoreLabel ?? '—';
   timeEl.textContent = result.estimatedTime ?? '—';
-  updateTimeTooltip(result.estimatedSeconds);
   entropyEl.textContent = result.entropyBits ? `${result.entropyBits} бит` : '—';
+  updateTimeTooltip(result.estimatedSeconds);
 
-  renderList(strengthsList, result.strengths, 'Добавьте больше длины и разнообразия.');
-  renderList(weaknessesList, result.weaknesses, 'Пароль выглядит устойчивым — продолжайте в том же духе.');
+  renderList(strengthsList, result.strengths, 'Введите пароль — сильные стороны появятся здесь.');
+  renderList(
+    weaknessesList,
+    result.weaknesses,
+    'Мы покажем, что усилить, как только появится пароль.'
+  );
+}
+
+function resetView() {
+  meterFill.dataset.strength = '0';
+  strengthLabel.textContent = 'Введите пароль, чтобы начать проверку.';
+  scoreEl.textContent = '—';
+  timeEl.textContent = '—';
+  timeEl.removeAttribute('title');
+  entropyEl.textContent = '—';
+  renderList(strengthsList, null, 'Введите пароль — сильные стороны появятся здесь.');
+  renderList(weaknessesList, null, 'Мы покажем, что усилить, как только появится пароль.');
+  if (toggle) {
+    toggle.textContent = 'Показать';
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.setAttribute('aria-label', 'Показать пароль');
+    if (input.type !== 'password') {
+      input.type = 'password';
+    }
+  }
+}
+
+function renderList(container, items, emptyState) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!items || items.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = emptyState;
+    container.append(li);
+    return;
+  }
+
+  for (const item of items) {
+    const li = document.createElement('li');
+    li.textContent = item;
+    container.append(li);
+  }
 }
 
 function updateTimeTooltip(seconds) {
@@ -51,50 +104,17 @@ function updateTimeTooltip(seconds) {
     return;
   }
 
-  if (!Number.isFinite(seconds)) {
-    timeEl.title = 'Больше 10^18 секунд — практический перебор невозможен.';
+  if (!Number.isFinite(seconds) || seconds > 1e18) {
+    timeEl.title = 'Практически не поддаётся перебору.';
     return;
   }
 
-  timeEl.title = seconds < 1
-    ? 'Меньше секунды. Нужно увеличить длину и разнообразие.'
-    : `Оценка перебора: ~${seconds.toLocaleString('ru-RU')} секунд.`;
-}
-
-function renderList(container, items, emptyState) {
-  container.innerHTML = '';
-
-  if (!items || items.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = emptyState;
-    container.appendChild(li);
+  if (seconds < 1) {
+    timeEl.title = 'Меньше секунды — добавьте длину и разнообразие.';
     return;
   }
 
-  items.forEach((text) => {
-    const li = document.createElement('li');
-    li.textContent = text;
-    container.appendChild(li);
-  });
-}
-
-function resetResults() {
-  strengthLabel.textContent = 'Введите пароль, чтобы начать.';
-  if (toggleButton) {
-    toggleButton.textContent = 'Показать';
-    toggleButton.setAttribute('aria-pressed', 'false');
-    toggleButton.setAttribute('aria-label', 'Показать пароль');
-  }
-  if (input.type !== 'password') {
-    input.type = 'password';
-  }
-  meterFill.dataset.strength = '0';
-  scoreEl.textContent = '—';
-  timeEl.textContent = '—';
-  entropyEl.textContent = '—';
-  timeEl.removeAttribute('title');
-  renderList(strengthsList, null, 'Введите пароль, чтобы увидеть сильные стороны.');
-  renderList(weaknessesList, null, 'Печатайте пароль — здесь появятся подсказки.');
+  timeEl.title = `Ориентировочно ${seconds.toLocaleString('ru-RU')} секунд.`;
 }
 
 function mapScoreToLevel(score) {
@@ -113,4 +133,4 @@ function mapScoreToLevel(score) {
   }
 }
 
-resetResults();
+init();

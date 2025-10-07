@@ -2,110 +2,109 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Good Pass — проверка стойкости пароля</title>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
+    <meta
+      name="description"
+      content="Введите пароль и получите оценку стойкости, примерное время взлома и советы, как усилить защиту."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="layout" aria-labelledby="page-title">
-      <section class="hero">
-        <header>
-          <h1 id="page-title">Сделаем пароль по-настоящему стойким</h1>
-          <p>
-            Введите пароль и узнайте, сколько времени потребуется на его взлом, какие
-            привычки делают защиту крепче и как избежать типичных ошибок.
-          </p>
-        </header>
-        <form class="password-form" aria-describedby="strength-label" autocomplete="off">
-          <label for="password-input">Ваш пароль</label>
-          <div class="input-wrapper">
-            <input
-              id="password-input"
-              name="password"
-              type="password"
-              minlength="1"
-              placeholder="Например, Гроза-Моря#2045"
-              aria-live="polite"
-              autocomplete="new-password"
-              autofocus
-            />
-            <button
-              type="button"
-              class="toggle-visibility"
-              id="toggle-visibility"
-              aria-label="Показать пароль"
-              aria-pressed="false"
-            >
-              Показать
-            </button>
-            <span class="input-underline" aria-hidden="true"></span>
-          </div>
-          <p id="strength-label" class="strength-label">Введите пароль, чтобы начать.</p>
-        </form>
-      </section>
-      <section class="analysis" aria-live="polite">
+    <a class="skip-link" href="#password-input">Перейти к проверке пароля</a>
+    <header class="hero" aria-labelledby="page-title">
+      <div class="hero__content">
+        <p class="hero__eyebrow">Образовательный сервис</p>
+        <h1 id="page-title">Соберите пароль, который не сломают за минуту</h1>
+        <p class="hero__lead">
+          Узнайте, сколько времени потребуется на перебор, какие привычки усиливают защиту и
+          какие паттерны наоборот упрощают злоумышленнику задачу.
+        </p>
+      </div>
+      <form class="checker" autocomplete="off" novalidate>
+        <label class="checker__label" for="password-input">Ваш пароль</label>
+        <div class="checker__field">
+          <input
+            id="password-input"
+            class="checker__input"
+            type="password"
+            name="password"
+            minlength="1"
+            autocomplete="new-password"
+            placeholder="Например, ЛунаПоюз#2031"
+            aria-describedby="strength-label"
+          />
+          <button type="button" id="toggle-visibility" class="checker__toggle" aria-pressed="false">
+            Показать
+          </button>
+        </div>
+        <p id="strength-label" class="checker__hint">Введите пароль, чтобы начать проверку.</p>
+      </form>
+    </header>
+
+    <main class="layout" aria-live="polite">
+      <section class="panel" aria-label="Результаты анализа">
         <div class="meter" role="img" aria-label="Индикатор стойкости">
-          <div class="meter-fill" data-strength="0"></div>
+          <div class="meter__fill" data-strength="0"></div>
         </div>
-        <div class="stats">
+        <dl class="stats">
           <div class="stat">
-            <h2>Оценка стойкости</h2>
-            <p class="stat-value" id="score">—</p>
+            <dt>Оценка стойкости</dt>
+            <dd id="score">—</dd>
           </div>
           <div class="stat">
-            <h2>Время перебора</h2>
-            <p class="stat-value" id="time">—</p>
-            <p class="stat-sub">По модели брутфорса в 1 млрд попыток в секунду.</p>
+            <dt>Время брутфорса</dt>
+            <dd id="time" title=""></dd>
+            <dd class="stat__note">1&nbsp;000&nbsp;000&nbsp;000 попыток в секунду.</dd>
           </div>
           <div class="stat">
-            <h2>Энтропия</h2>
-            <p class="stat-value" id="entropy">—</p>
-            <p class="stat-sub">Чем выше бит энтропии, тем сложнее подбор.</p>
+            <dt>Энтропия</dt>
+            <dd id="entropy">—</dd>
+            <dd class="stat__note">Чем больше бит — тем дольше подбор.</dd>
           </div>
-        </div>
-        <div class="lists">
-          <article>
-            <h2>Что уже хорошо</h2>
-            <ul id="strengths" class="list"></ul>
-          </article>
-          <article>
-            <h2>Что стоит улучшить</h2>
-            <ul id="weaknesses" class="list"></ul>
-          </article>
-        </div>
+        </dl>
       </section>
-      <section class="education" aria-label="Объяснение критериев стойкости">
-        <article class="education-card">
-          <h2>Что делает пароль хорошим?</h2>
+
+      <section class="panel panel--lists" aria-label="Рекомендации">
+        <article>
+          <h2>Что уже хорошо</h2>
+          <ul id="strengths" class="list" aria-live="polite"></ul>
+        </article>
+        <article>
+          <h2>Что стоит улучшить</h2>
+          <ul id="weaknesses" class="list" aria-live="polite"></ul>
+        </article>
+      </section>
+
+      <section class="panel panel--guides" aria-label="Памятка по стойким паролям">
+        <article class="guide">
+          <h2>Секреты сильного пароля</h2>
           <ul>
-            <li>Длина 12–16 символов и больше.</li>
-            <li>Смешанный регистр, цифры и удобные спецсимволы.</li>
-            <li>Фраза, которую легко представить, но сложно угадать.</li>
-            <li>Уникальность для каждого сайта + менеджер паролей.</li>
+            <li>Используйте фразу длиной от 12–16 символов с понятным смыслом.</li>
+            <li>Смешивайте регистр, цифры и удобные спецсимволы.</li>
+            <li>Добавляйте уникальные детали, которые понятны только вам.</li>
+            <li>Храните пароли в менеджере, чтобы не повторять один и тот же.</li>
           </ul>
         </article>
-        <article class="education-card">
-          <h2>Что ослабляет пароль?</h2>
+        <article class="guide">
+          <h2>Что делает пароль слабым</h2>
           <ul>
-            <li>Последовательности клавиш и шаблоны вроде «qwerty123».</li>
-            <li>Повторы одного символа или очевидные замены букв цифрами.</li>
-            <li>Даты рождения, имена, любимые команды и прочие личные данные.</li>
-            <li>Повторное использование одного пароля в разных сервисах.</li>
+            <li>Последовательности клавиш, даты рождения и популярные слова.</li>
+            <li>Повторение одного символа или простые замены «a» → «4».</li>
+            <li>Использование личных данных, которые легко найти в соцсетях.</li>
+            <li>Повторение одного пароля на разных сайтах.</li>
           </ul>
         </article>
       </section>
     </main>
+
     <footer class="footer">
       <p>
-        Запоминайте пароли фразами, добавляйте редкие символы и используйте менеджер
-        паролей — так вы сохраняете и удобство, и защиту.
+        Создавайте длинные, осмысленные фразы и дополняйте их символами — так вы сохраняете и
+        удобство, и стойкость. Менеджер паролей поможет не повторяться.
       </p>
     </footer>
-    <script type="module" src="./app.js"></script>
+
+    <script type="module" src="./app.js" defer></script>
   </body>
 </html>

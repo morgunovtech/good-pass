@@ -26,28 +26,29 @@ const COMMON_SEQUENCES = [
   '7890'
 ];
 
-const KEYBOARD_PATTERNS = ['qwerty', 'asdf', 'zxcv'];
+const KEYBOARD_PATTERNS = ['qwerty', 'asdf', 'zxcv', 'йцуке', 'фывап'];
 
-export const GUESS_RATE_PER_SECOND = 1_000_000_000; // 1 billion guesses per second.
+export const GUESS_RATE_PER_SECOND = 1_000_000_000; // 1 млрд попыток в секунду
 
-export function analyzePassword(password) {
-  const normalized = String(password ?? '');
-  const length = normalized.length;
-  const charspace = calculateCharsetSize(normalized);
-  const entropyBits = length ? length * Math.log2(charspace || 1) : 0;
+export function analyzePassword(rawPassword) {
+  const password = normalizePassword(rawPassword);
+  const length = password.length;
 
-  const crackSeconds = estimateBruteForceSeconds(entropyBits);
-  const estimatedTime = formatDuration(crackSeconds);
+  const charsetSize = calculateCharsetSize(password);
+  const entropyBits = length > 0 ? Number((length * Math.log2(Math.max(charsetSize, 1))).toFixed(2)) : 0;
 
-  const weaknesses = identifyWeaknesses(normalized, entropyBits);
-  const strengths = identifyStrengths(normalized, weaknesses, entropyBits);
-  const scoreLabel = labelForEntropy(entropyBits, weaknesses);
+  const estimatedSeconds = estimateBruteForceSeconds(entropyBits);
+  const estimatedTime = formatDuration(estimatedSeconds);
+
+  const weaknesses = collectWeaknesses(password, entropyBits);
+  const strengths = collectStrengths(password, entropyBits, weaknesses);
+  const scoreLabel = mapEntropyToLabel(entropyBits, weaknesses);
 
   return {
     scoreLabel,
-    entropyBits: Number(entropyBits.toFixed(2)),
+    entropyBits,
     estimatedTime,
-    estimatedSeconds: crackSeconds,
+    estimatedSeconds,
     strengths,
     weaknesses
   };
@@ -55,19 +56,21 @@ export function analyzePassword(password) {
 
 export function calculateCharsetSize(password) {
   let size = 0;
-  const hasLower = /[a-z]/.test(password);
-  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-zа-яё]/.test(password);
+  const hasUpper = /[A-ZА-ЯЁ]/.test(password);
   const hasDigits = /\d/.test(password);
   const hasSymbols = /[~!@#$%^&*()\-_=+\[\]{}|;:'",.<>/?`\\]/.test(password);
   const hasSpace = /\s/.test(password);
   const hasNonAscii = /[^\x00-\x7F]/.test(password);
 
-  if (hasLower) size += 26;
+  if (hasLower) size += 26; // латиница
   if (hasUpper) size += 26;
+  if (/[а-яё]/.test(password)) size += 33;
+  if (/[А-ЯЁ]/.test(password)) size += 33;
   if (hasDigits) size += 10;
-  if (hasSymbols) size += 33; // printable ASCII punctuation.
+  if (hasSymbols) size += 33;
   if (hasSpace) size += 1;
-  if (hasNonAscii) size += 100; // conservative bucket for Unicode.
+  if (hasNonAscii) size += 100; // запас для остального Юникода
 
   if (size === 0) {
     size = new Set(password).size || 1;
@@ -83,11 +86,7 @@ export function estimateBruteForceSeconds(entropyBits) {
 
   const logSeconds = entropyBits - Math.log2(GUESS_RATE_PER_SECOND);
   const seconds = Math.pow(2, logSeconds);
-  if (!Number.isFinite(seconds)) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  return seconds;
+  return Number.isFinite(seconds) ? seconds : Number.POSITIVE_INFINITY;
 }
 
 export function formatDuration(seconds) {
@@ -114,23 +113,32 @@ export function formatDuration(seconds) {
     if (remaining < unit.seconds) continue;
     const value = Math.floor(remaining / unit.seconds);
     remaining -= value * unit.seconds;
-    const label = pluralize(value, unit.forms);
-    parts.push(`${value.toLocaleString('ru-RU')} ${label}`);
+    parts.push(`${value.toLocaleString('ru-RU')} ${pluralize(value, unit.forms)}`);
     if (parts.length === 2) break;
   }
 
   return parts.length ? parts.join(' и ') : 'секунды';
 }
 
-function identifyWeaknesses(password, entropyBits) {
-  const weaknesses = [];
-  const uniqueChars = new Set(password);
+function normalizePassword(input) {
+  if (typeof input === 'string') return input;
+  if (input === null || input === undefined) return '';
+  return String(input);
+}
 
-  if (password.length < 8) {
-    weaknesses.push('Меньше 8 символов — такой пароль легко перебрать.');
+function collectWeaknesses(password, entropyBits) {
+  const weaknesses = [];
+  const length = password.length;
+  const uniqueChars = new Set(password);
+  const lower = password.toLowerCase();
+
+  if (length === 0) {
+    return weaknesses;
   }
 
-  if (password.length >= 8 && password.length < 12) {
+  if (length < 8) {
+    weaknesses.push('Меньше 8 символов — такой пароль легко перебрать.');
+  } else if (length < 12) {
     weaknesses.push('Увеличьте длину до 12+ символов для заметного роста стойкости.');
   }
 
@@ -138,24 +146,23 @@ function identifyWeaknesses(password, entropyBits) {
     weaknesses.push('Повторяющиеся символы не добавляют стойкости.');
   }
 
-  if (uniqueChars.size <= 2 && password.length > 2) {
+  if (uniqueChars.size <= 2 && length > 3) {
     weaknesses.push('Используется слишком мало разных символов.');
   }
 
-  const lowerPassword = password.toLowerCase();
-  for (const pattern of COMMON_PATTERNS) {
-    if (lowerPassword.includes(pattern)) {
-      weaknesses.push('Пароль содержит популярный шаблон, который есть во взломанных базах.');
-      break;
-    }
-  }
-
-  if (COMMON_SEQUENCES.some((seq) => lowerPassword.includes(seq))) {
+  if (COMMON_SEQUENCES.some((sequence) => lower.includes(sequence))) {
     weaknesses.push('Последовательности символов угадываются мгновенно.');
   }
 
-  if (KEYBOARD_PATTERNS.some((seq) => lowerPassword.includes(seq))) {
+  if (KEYBOARD_PATTERNS.some((pattern) => lower.includes(pattern))) {
     weaknesses.push('Простые клавиатурные дорожки легко распознаются.');
+  }
+
+  for (const pattern of COMMON_PATTERNS) {
+    if (lower.includes(pattern)) {
+      weaknesses.push('Пароль содержит популярный шаблон из слитых баз.');
+      break;
+    }
   }
 
   if (/(?:19|20)\d{2}/.test(password)) {
@@ -166,8 +173,8 @@ function identifyWeaknesses(password, entropyBits) {
     weaknesses.push('Низкая энтропия — комбинируйте разные типы символов.');
   }
 
-  if (!/[A-Za-z]/.test(password)) {
-    weaknesses.push('Добавьте буквы, чтобы увеличить пространство вариантов.');
+  if (!/[A-Za-zА-Яа-яЁё]/.test(password)) {
+    weaknesses.push('Добавьте буквы, чтобы расширить набор символов.');
   }
 
   if (!/\d/.test(password)) {
@@ -178,23 +185,24 @@ function identifyWeaknesses(password, entropyBits) {
     weaknesses.push('Спецсимволы увеличивают энтропию, если их удобно запомнить.');
   }
 
-  return [...new Set(weaknesses)];
+  return dedupe(weaknesses);
 }
 
-function identifyStrengths(password, weaknesses, entropyBits) {
+function collectStrengths(password, entropyBits, weaknesses) {
   const strengths = [];
+  const length = password.length;
 
-  if (password.length >= 16) {
+  if (length >= 16) {
     strengths.push('Очень длинный пароль даёт запас прочности на годы.');
-  } else if (password.length >= 12) {
+  } else if (length >= 12) {
     strengths.push('Длина 12+ символов резко повышает стойкость.');
   }
 
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) {
+  if (/[A-ZА-ЯЁ]/.test(password) && /[a-zа-яё]/.test(password)) {
     strengths.push('Смешанный регистр усложняет угадывание.');
   }
 
-  if (/\d/.test(password) && /[A-Za-z]/.test(password)) {
+  if (/[A-Za-zА-Яа-яЁё]/.test(password) && /\d/.test(password)) {
     strengths.push('Комбинация букв и цифр создаёт больше вариантов.');
   }
 
@@ -210,43 +218,50 @@ function identifyStrengths(password, weaknesses, entropyBits) {
     strengths.push('Высокая энтропия — пароль устойчив к перебору.');
   }
 
-  const uniqueStrengths = strengths.filter((item) => !weaknesses.includes(item));
-  return uniqueStrengths;
+  const weaknessSet = new Set(weaknesses);
+  return dedupe(strengths.filter((item) => !weaknessSet.has(item)));
 }
 
-function labelForEntropy(entropyBits, weaknesses) {
+function mapEntropyToLabel(entropyBits, weaknesses) {
   const hasCriticalWeakness = weaknesses.some((item) =>
-    item.startsWith('Меньше 8') || item.startsWith('Повторяющиеся')
+    item.startsWith('Меньше 8') || item.startsWith('Повторяющиеся символы')
   );
 
   if (entropyBits < 28 || hasCriticalWeakness) {
     return 'Очень слабый';
   }
+
   if (entropyBits < 36) {
     return 'Слабый';
   }
+
   if (entropyBits < 60) {
     return 'Средний';
   }
+
   if (entropyBits < 90) {
     return 'Сильный';
   }
+
   return 'Отличный';
 }
 
 function pluralize(value, forms) {
-  const { one, few, many } = forms;
   const abs = Math.abs(value) % 100;
   if (abs >= 11 && abs <= 14) {
-    return many;
+    return forms.many;
   }
 
   const mod = abs % 10;
   if (mod === 1) {
-    return one;
+    return forms.one;
   }
   if (mod >= 2 && mod <= 4) {
-    return few;
+    return forms.few;
   }
-  return many;
+  return forms.many;
+}
+
+function dedupe(items) {
+  return [...new Set(items)];
 }
