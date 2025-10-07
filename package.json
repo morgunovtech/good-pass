@@ -1,0 +1,13 @@
+{
+  "name": "good-pass",
+  "version": "2024.04.00",
+  "description": "Password strength educational web service",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

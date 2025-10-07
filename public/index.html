@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Good Pass — проверка стойкости пароля</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="layout" aria-labelledby="page-title">
+      <section class="hero">
+        <header>
+          <h1 id="page-title">Сделаем пароль по-настоящему стойким</h1>
+          <p>
+            Введите пароль и узнайте, сколько времени потребуется на его взлом, какие
+            привычки делают защиту крепче и как избежать типичных ошибок.
+          </p>
+        </header>
+        <form class="password-form" aria-describedby="strength-label" autocomplete="off">
+          <label for="password-input">Ваш пароль</label>
+          <div class="input-wrapper">
+            <input
+              id="password-input"
+              name="password"
+              type="text"
+              minlength="1"
+              placeholder="Например, Гроза-Моря#2045"
+              aria-live="polite"
+              autofocus
+            />
+            <span class="input-underline" aria-hidden="true"></span>
+          </div>
+          <p id="strength-label" class="strength-label">Введите пароль, чтобы начать.</p>
+        </form>
+      </section>
+      <section class="analysis" aria-live="polite">
+        <div class="meter" role="img" aria-label="Индикатор стойкости">
+          <div class="meter-fill" data-strength="0"></div>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <h2>Оценка стойкости</h2>
+            <p class="stat-value" id="score">—</p>
+          </div>
+          <div class="stat">
+            <h2>Время перебора</h2>
+            <p class="stat-value" id="time">—</p>
+            <p class="stat-sub">По модели брутфорса в 1 млрд попыток в секунду.</p>
+          </div>
+          <div class="stat">
+            <h2>Энтропия</h2>
+            <p class="stat-value" id="entropy">—</p>
+            <p class="stat-sub">Чем выше бит энтропии, тем сложнее подбор.</p>
+          </div>
+        </div>
+        <div class="lists">
+          <article>
+            <h2>Что уже хорошо</h2>
+            <ul id="strengths" class="list"></ul>
+          </article>
+          <article>
+            <h2>Что стоит улучшить</h2>
+            <ul id="weaknesses" class="list"></ul>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer class="footer">
+      <p>
+        Запоминайте пароли фразами, добавляйте редкие символы и используйте менеджер
+        паролей — так вы сохраняете и удобство, и защиту.
+      </p>
+    </footer>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
