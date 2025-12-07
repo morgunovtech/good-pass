@@ -1,4 +1,4 @@
-import { getMessage } from '../../../../lib/tempMailProvider.js';
+import { ProviderConfigError, getMessage } from '../../../../lib/tempMailProvider.js';
 import { cleanupMemory, getMailbox } from '../../../../lib/tempMailStore.js';
 import { escapeText, sanitizeHtml } from '../../../../lib/sanitizeHtml.js';
 
@@ -23,6 +23,9 @@ export async function onRequestGet(context) {
       htmlBodySanitized: sanitizeHtml(message.htmlBody ?? '') || escapeText(message.textBody ?? ''),
     });
   } catch (error) {
+    if (error instanceof ProviderConfigError) {
+      return jsonResponse({ error: 'provider_not_configured', message: error.message }, 503);
+    }
     return jsonResponse({ error: 'provider_unavailable', message: error.message }, 502);
   }
 }

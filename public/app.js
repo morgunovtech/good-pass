@@ -76,7 +76,8 @@ const translations = {
     tempMailCopied: 'Адрес скопирован',
     tempMailLoading: 'Загружаем письма…',
     tempMailLimit: 'Достигнут лимит активных ящиков. Попробуйте позже.',
-    tempMailRateLimited: 'Слишком частые запросы. Повторите через минуту.'
+    tempMailRateLimited: 'Слишком частые запросы. Повторите через минуту.',
+    tempMailNotConfigured: 'Временная почта не настроена. Добавьте ключи провайдера в окружение.'
   },
   en: {
     title: 'Plain password check',
@@ -150,7 +151,8 @@ const translations = {
     tempMailCopied: 'Address copied',
     tempMailLoading: 'Loading messages…',
     tempMailLimit: 'Active inbox limit reached. Please try again later.',
-    tempMailRateLimited: 'Too many requests. Please retry in a minute.'
+    tempMailRateLimited: 'Too many requests. Please retry in a minute.',
+    tempMailNotConfigured: 'Temp mail is not configured. Add provider keys to the environment.'
   },
   uz: {
     title: 'Parolni tekshirish',
@@ -223,7 +225,8 @@ const translations = {
     tempMailCopied: 'Nusxa olindi',
     tempMailLoading: 'Yuklanmoqda…',
     tempMailLimit: 'Chegara oshib ketdi. Keyinroq urinib ko‘ring. (TODO: uz)',
-    tempMailRateLimited: 'So‘rovlar juda ko‘p. Bir ozdan so‘ng urinib ko‘ring. (TODO: uz)'
+    tempMailRateLimited: 'So‘rovlar juda ko‘p. Bir ozdan so‘ng urinib ko‘ring. (TODO: uz)',
+    tempMailNotConfigured: 'Temp pochta sozlanmagan. Provayder kalitlarini kiriting. (TODO: uz)'
   }
 };
 
@@ -1114,6 +1117,7 @@ function formatTempMailError(payload, dict) {
   if (payload?.error === 'expired') return dict.tempMailExpired;
   if (payload?.error === 'too_many_mailboxes') return dict.tempMailLimit;
   if (payload?.error === 'rate_limited') return dict.tempMailRateLimited;
+  if (payload?.error === 'provider_not_configured') return dict.tempMailNotConfigured;
   return dict.tempMailError;
 }
 

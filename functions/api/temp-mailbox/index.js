@@ -1,4 +1,4 @@
-import { createMailbox } from '../../lib/tempMailProvider.js';
+import { ProviderConfigError, createMailbox } from '../../lib/tempMailProvider.js';
 import { cleanupMemory, countActiveMailboxes, enforceRateLimit, hashFingerprint, saveMailbox } from '../../lib/tempMailStore.js';
 
 const TTL_MS = 10 * 60 * 1000;
@@ -25,6 +25,9 @@ export async function onRequestPost(context) {
   try {
     providerMailbox = await createMailbox(env);
   } catch (error) {
+    if (error instanceof ProviderConfigError) {
+      return jsonResponse({ error: 'provider_not_configured', message: error.message }, 503);
+    }
     return jsonResponse({ error: 'provider_unavailable', message: error.message }, 502);
   }
 

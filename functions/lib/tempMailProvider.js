@@ -1,10 +1,21 @@
-export async function createMailbox(env) {
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
-  const apiKey = env?.TEMP_MAIL_API_KEY;
-
-  if (!baseUrl) {
-    throw new Error('TEMP_MAIL_API_BASE_URL is required to create a mailbox');
+export class ProviderConfigError extends Error {
+  constructor(message = 'TEMP_MAIL_API_BASE_URL is missing') {
+    super(message);
+    this.name = 'ProviderConfigError';
   }
+}
+
+function requireBaseUrl(env) {
+  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
+  if (!baseUrl) {
+    throw new ProviderConfigError('Temp mail provider is not configured');
+  }
+  return baseUrl;
+}
+
+export async function createMailbox(env) {
+  const baseUrl = requireBaseUrl(env);
+  const apiKey = env?.TEMP_MAIL_API_KEY;
 
   const url = `${baseUrl}/mailboxes`; // TODO: replace with provider-specific endpoint
   const headers = { 'Content-Type': 'application/json' };
@@ -26,11 +37,8 @@ export async function createMailbox(env) {
 }
 
 export async function listMessages(env, mailboxId) {
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
+  const baseUrl = requireBaseUrl(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
-  if (!baseUrl) {
-    throw new Error('TEMP_MAIL_API_BASE_URL is required to list messages');
-  }
 
   const url = `${baseUrl}/mailboxes/${encodeURIComponent(mailboxId)}/messages`; // TODO: adjust path
   const headers = { 'Accept': 'application/json' };
@@ -53,11 +61,8 @@ export async function listMessages(env, mailboxId) {
 }
 
 export async function getMessage(env, mailboxId, messageId) {
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
+  const baseUrl = requireBaseUrl(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
-  if (!baseUrl) {
-    throw new Error('TEMP_MAIL_API_BASE_URL is required to fetch message');
-  }
 
   const url = `${baseUrl}/mailboxes/${encodeURIComponent(mailboxId)}/messages/${encodeURIComponent(messageId)}`; // TODO: adjust path
   const headers = { 'Accept': 'application/json' };

@@ -1,4 +1,4 @@
-import { listMessages } from '../../../../lib/tempMailProvider.js';
+import { ProviderConfigError, listMessages } from '../../../../lib/tempMailProvider.js';
 import { cleanupMemory, getMailbox } from '../../../../lib/tempMailStore.js';
 
 export async function onRequestGet(context) {
@@ -21,6 +21,9 @@ export async function onRequestGet(context) {
     }));
     return jsonResponse({ messages: mapped });
   } catch (error) {
+    if (error instanceof ProviderConfigError) {
+      return jsonResponse({ error: 'provider_not_configured', message: error.message }, 503);
+    }
     return jsonResponse({ error: 'provider_unavailable', message: error.message }, 502);
   }
 }
