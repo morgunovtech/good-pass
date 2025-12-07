@@ -15,6 +15,9 @@ const DEFAULT_DOMAINS = [
 export function getTempMailConfigStatus(env) {
   const missing = [];
   const baseUrl = env?.TEMP_MAIL_API_BASE_URL || DEFAULT_BASE_URL;
+  if (isMockMode(env)) {
+    return { ok: true, missing: [], baseUrl: 'mock' };
+  }
   if (!baseUrl) missing.push('TEMP_MAIL_API_BASE_URL');
   if (env?.TEMP_MAIL_API_REQUIRE_KEY === 'true' && !env?.TEMP_MAIL_API_KEY) {
     missing.push('TEMP_MAIL_API_KEY');
@@ -34,6 +37,11 @@ function assertConfigured(env) {
 }
 
 export async function createMailbox(env) {
+  if (isMockMode(env)) {
+    const id = crypto.randomUUID();
+    return { id, address: `test-${id.slice(0, 8)}@example.test` };
+  }
+
   // Для 1secmail почтовый ящик не требует предварительного создания.
   // Генерируем логин сами, выбираем разрешённый домен и сразу возвращаем адрес.
   assertConfigured(env);
@@ -46,6 +54,18 @@ export async function createMailbox(env) {
 }
 
 export async function listMessages(env, mailboxId) {
+  if (isMockMode(env)) {
+    return [
+      {
+        id: 'demo-1',
+        from: 'example@demo.test',
+        subject: 'Добро пожаловать! (mock)',
+        receivedAt: new Date().toISOString(),
+        isRead: false,
+      },
+    ];
+  }
+
   const baseUrl = assertConfigured(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
   const { login, domain } = parseMailboxIdentifier(mailboxId);
@@ -65,6 +85,18 @@ export async function listMessages(env, mailboxId) {
 }
 
 export async function getMessage(env, mailboxId, messageId) {
+  if (isMockMode(env)) {
+    return {
+      id: messageId,
+      from: 'example@demo.test',
+      to: mailboxId.includes('@') ? mailboxId : mailboxId.replace(':', '@'),
+      subject: 'Тестовое письмо (mock)',
+      receivedAt: new Date().toISOString(),
+      textBody: 'Это пример письма из мок-провайдера. Сервис подключен корректно.',
+      htmlBody: '<p><strong>Это пример письма</strong> из мок-провайдера. Сервис подключен корректно.</p>',
+    };
+  }
+
   const baseUrl = assertConfigured(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
   const { login, domain } = parseMailboxIdentifier(mailboxId);
@@ -124,8 +156,11 @@ async function fetchJson(url, headers) {
   try {
     const response = await fetch(url, { method: 'GET', headers, signal: controller.signal });
     if (!response.ok) {
+      const errorBody = await safeReadText(response);
+      console.error(JSON.stringify({ level: 'error', msg: 'temp-mail provider non-200', status: response.status, errorBody }));
       const error = new Error(`Temp-mail provider error: ${response.status}`);
       error.code = 'provider_unavailable';
+      error.details = errorBody;
       throw error;
     }
     return await response.json();
@@ -138,5 +173,17 @@ async function fetchJson(url, headers) {
     throw error;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function isMockMode(env) {
+  return (env?.TEMP_MAIL_MODE || '').toLowerCase() === 'mock';
+}
+
+async function safeReadText(response) {
+  try {
+    return await response.text();
+  } catch (error) {
+    return 'unreadable_body';
   }
 }

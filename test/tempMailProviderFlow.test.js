@@ -59,3 +59,26 @@ describe('temp mail provider (1secmail defaults)', () => {
     assert.equal(message.htmlBody.includes('Hi there'), true);
   });
 });
+
+describe('temp mail provider (mock mode)', () => {
+  it('returns predictable mailbox and messages without network', async () => {
+    let called = false;
+    const original = global.fetch;
+    global.fetch = () => {
+      called = true;
+      throw new Error('network should not be called in mock mode');
+    };
+
+    const env = { TEMP_MAIL_MODE: 'mock' };
+    const mailbox = await createMailbox(env);
+    assert.ok(mailbox.address.includes('@example.test'));
+
+    const messages = await listMessages(env, mailbox.id);
+    assert.equal(messages.length, 1);
+    const detail = await getMessage(env, mailbox.id, messages[0].id);
+    assert.equal(detail.subject.includes('mock'), true);
+    assert.equal(called, false);
+
+    global.fetch = original;
+  });
+});

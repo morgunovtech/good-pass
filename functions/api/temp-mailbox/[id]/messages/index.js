@@ -29,7 +29,16 @@ export async function onRequestGet(context) {
     if (error?.code === 'not_configured') {
       return jsonResponse({ error: 'not_configured', missing: error.missing || [] }, 503);
     }
-    return jsonResponse({ error: 'provider_unavailable', message: error.message }, 502);
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        msg: 'temp-mail provider list failed',
+        error: error.message,
+        code: error.code,
+        details: error.details,
+      })
+    );
+    return jsonResponse({ error: 'provider_unavailable', message: error.message, details: error.details }, 502);
   }
 }
 

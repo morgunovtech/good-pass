@@ -968,6 +968,7 @@ async function createTempMailbox() {
         handleTempMailNotConfigured(errorPayload);
         return;
       }
+      console.error('temp-mail create error', errorPayload);
       elements.tempMailError.textContent = formatTempMailError(errorPayload, dict);
       return;
     }
@@ -1023,6 +1024,7 @@ async function fetchTempMailMessages() {
         handleTempMailNotConfigured(errorPayload);
         return;
       }
+      console.error('temp-mail list error', errorPayload);
       elements.tempMailError.textContent = formatTempMailError(errorPayload, dict);
       return;
     }
@@ -1086,6 +1088,7 @@ async function openTempMailMessage(messageId) {
         handleTempMailNotConfigured(errorPayload);
         return;
       }
+      console.error('temp-mail read error', errorPayload);
       elements.tempMailError.textContent = formatTempMailError(errorPayload, dict);
       return;
     }
