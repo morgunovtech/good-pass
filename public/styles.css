@@ -591,6 +591,122 @@ input[type='range'] {
   margin: 8px 0;
 }
 
+.temp-mail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.temp-mail__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mailbox {
+  padding: 16px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.mailbox[data-state='empty'] {
+  display: none;
+}
+
+.mailbox__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mailbox__address {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.mailbox__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.temp-mail__body {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+.message-pane {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message-pane__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message-item {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.message-item:hover,
+.message-item:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.message-item__meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.message-item__subject {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.message-viewer {
+  min-height: 200px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.message-viewer__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
+.message-viewer__html {
+  margin-top: 8px;
+  color: var(--text);
+}
+
 @media (max-width: 768px) {
   .topbar {
     flex-direction: column;
@@ -607,5 +723,15 @@ input[type='range'] {
 
   .summary {
     grid-template-columns: 1fr;
+  }
+
+  .temp-mail__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .temp-mail__body {
+    grid-template-columns: 1fr 1fr;
   }
 }

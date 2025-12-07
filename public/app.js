@@ -54,7 +54,27 @@ const translations = {
     privacyText1:
       'Мы используем k-анонимность: отправляются только первые 5 символов SHA-1 хэша. Пароль остаётся у вас.',
     privacyText2: 'Have I Been Pwned возвращает только статистику по совпадениям.',
-    close: 'Закрыть'
+    close: 'Закрыть',
+    tempMailTag: 'Временная почта',
+    tempMailTitle: 'Временная почта на 10 минут',
+    tempMailDescription:
+      'Временный адрес помогает регистрироваться, не раскрывая основной e-mail. Ящик живёт 10 минут, письма исчезают сами.',
+    tempMailCreate: 'Создать временный адрес',
+    tempMailAddressLabel: 'Текущий адрес',
+    tempMailCopy: 'Скопировать',
+    tempMailMessages: 'Письма',
+    tempMailViewer: 'Письмо',
+    tempMailSelect: 'Выберите письмо, чтобы прочитать его.',
+    tempMailNoMessages: 'Пока писем нет.',
+    tempMailRefresh: 'Обновить',
+    tempMailExpired: 'Срок действия истёк. Создайте новый адрес.',
+    tempMailExpiresIn: 'Осталось времени: {time}',
+    tempMailExpiryNote: 'Адрес живёт только 10 минут. После истечения доступ к письмам пропадает.',
+    tempMailStatusCreating: 'Создаём адрес... ',
+    tempMailStatusError: 'Сервис временно недоступен. Попробуйте позже.',
+    tempMailStatusRateLimit: 'Слишком много ящиков за раз. Подождите минуту и попробуйте снова.',
+    tempMailStatusUnavailable: 'Временная почта не настроена. Добавьте ключи провайдера в переменные окружения.',
+    tempMailService: 'Письма приходят без пароля, доступ есть только в этой вкладке. Не храните чувствительные данные.'
   },
   en: {
     title: 'Plain password check',
@@ -107,7 +127,27 @@ const translations = {
     privacyTitle: 'Why the lookup is safe',
     privacyText1: 'We only send the first 5 chars of the SHA-1 hash. The password stays local.',
     privacyText2: 'Have I Been Pwned returns only hit counts.',
-    close: 'Close'
+    close: 'Close',
+    tempMailTag: 'Temp mail',
+    tempMailTitle: '10-minute email',
+    tempMailDescription:
+      'Use a disposable address to sign up without revealing your main inbox. It lives for 10 minutes and then disappears.',
+    tempMailCreate: 'Create address',
+    tempMailAddressLabel: 'Current address',
+    tempMailCopy: 'Copy',
+    tempMailMessages: 'Messages',
+    tempMailViewer: 'Message',
+    tempMailSelect: 'Pick a message to read it here.',
+    tempMailNoMessages: 'No messages yet.',
+    tempMailRefresh: 'Refresh',
+    tempMailExpired: 'Mailbox expired. Create a new one.',
+    tempMailExpiresIn: 'Time left: {time}',
+    tempMailExpiryNote: 'The address lasts 10 minutes. After that, messages become unavailable.',
+    tempMailStatusCreating: 'Creating an address...',
+    tempMailStatusError: 'Service is unavailable. Please try again later.',
+    tempMailStatusRateLimit: 'Too many mailboxes. Wait a bit and retry.',
+    tempMailStatusUnavailable: 'Temp mail is not configured. Add provider credentials to env vars.',
+    tempMailService: 'Mail comes without passwords; access is tied to this tab. Avoid storing sensitive data.'
   },
   uz: {
     title: 'Parolni tekshirish',
@@ -160,7 +200,26 @@ const translations = {
     privacyTitle: 'Nega xavfsiz',
     privacyText1: 'Faqat xeshning bir qismi yuboriladi. (TODO: uz)',
     privacyText2: 'Havola faqat statistika qaytaradi.',
-    close: 'Yopish'
+    close: 'Yopish',
+    tempMailTag: 'Temp pochta',
+    tempMailTitle: '10 daqiqalik e-mail',
+    tempMailDescription: 'Vaqtinchalik manzil 10 daqiqa yashaydi. (TODO: uz)',
+    tempMailCreate: 'Manzil yaratish',
+    tempMailAddressLabel: 'Joriy manzil',
+    tempMailCopy: 'Nusxa olish',
+    tempMailMessages: 'Xatlar',
+    tempMailViewer: 'Xat',
+    tempMailSelect: 'O‘qish uchun xat tanlang. (TODO: uz)',
+    tempMailNoMessages: 'Hozircha xatlar yo‘q.',
+    tempMailRefresh: 'Yangilash',
+    tempMailExpired: 'Muddati tugadi. Yangi manzil yarating.',
+    tempMailExpiresIn: 'Qoldi: {time}',
+    tempMailExpiryNote: 'Manzil 10 daqiqa amal qiladi. (TODO: uz)',
+    tempMailStatusCreating: 'Manzil yaratilmoqda...',
+    tempMailStatusError: 'Xizmat vaqtincha mavjud emas.',
+    tempMailStatusRateLimit: 'Juda ko‘p so‘rov. Keyinroq urinib ko‘ring.',
+    tempMailStatusUnavailable: 'Temp pochta sozlanmagan. (TODO: uz)',
+    tempMailService: 'Kirish faqat shu yorliqda. Maxfiy ma’lumot yubormang.'
   }
 };
 
@@ -203,7 +262,25 @@ const elements = {
   passphraseOutputEl: document.querySelector('#passphrase-output'),
   passphraseEntropyEl: document.querySelector('#passphrase-entropy'),
   themeSelect: document.querySelector('#theme-select'),
-  langButtons: document.querySelectorAll('[data-lang]')
+  langButtons: document.querySelectorAll('[data-lang]'),
+  tempMailSection: document.querySelector('#temp-mail'),
+  tempMailCreate: document.querySelector('#temp-mail-create'),
+  tempMailStatus: document.querySelector('#temp-mail-status'),
+  tempMailBox: document.querySelector('.mailbox'),
+  tempMailAddress: document.querySelector('#temp-mail-address'),
+  tempMailCopy: document.querySelector('#temp-mail-copy'),
+  tempMailTimer: document.querySelector('#temp-mail-timer'),
+  tempMailExpiryNote: document.querySelector('#temp-mail-expiry-note'),
+  tempMailMessages: document.querySelector('#temp-mail-messages'),
+  tempMailEmpty: document.querySelector('#temp-mail-empty'),
+  tempMailViewerPlaceholder: document.querySelector('#temp-mail-viewer-placeholder'),
+  tempMailMessageContainer: document.querySelector('#temp-mail-message'),
+  tempMailMessageFrom: document.querySelector('#temp-mail-message-from'),
+  tempMailMessageSubject: document.querySelector('#temp-mail-message-subject'),
+  tempMailMessageDate: document.querySelector('#temp-mail-message-date'),
+  tempMailMessageText: document.querySelector('#temp-mail-message-text'),
+  tempMailMessageHtml: document.querySelector('#temp-mail-message-html'),
+  tempMailRefresh: document.querySelector('#temp-mail-refresh')
 };
 
 const detectorItems = new Map();
@@ -222,7 +299,15 @@ const state = {
   hashProfile: 'argon2id',
   breachController: null,
   language: loadLanguage(),
-  theme: loadTheme()
+  theme: loadTheme(),
+  tempMail: {
+    mailboxId: null,
+    address: '',
+    accessToken: '',
+    expiresAt: null,
+    pollTimer: null,
+    countdownTimer: null
+  }
 };
 
 function loadLanguage() {
@@ -275,6 +360,11 @@ function translatePage(lang) {
 
   if (elements.toggle) {
     elements.toggle.querySelector('span').textContent = elements.input?.type === 'password' ? dict.show : dict.hide;
+  }
+
+  if (state.tempMail.mailboxId) {
+    renderMailbox();
+    updateCountdown();
   }
 
   return dict;
@@ -346,6 +436,7 @@ function init() {
   setupPassphraseGenerator();
   setupBreachCheck();
   setupModal();
+  setupTempMail();
 }
 
 function handleAnalyze() {
@@ -845,6 +936,225 @@ function formatNumber(value) {
     return `${(value / 1_000).toFixed(1)} тыс.`;
   }
   return value.toLocaleString('ru-RU');
+}
+
+function setupTempMail() {
+  if (!elements.tempMailCreate) return;
+  const dict = translations[state.language] || translations.ru;
+  elements.tempMailStatus.textContent = dict.tempMailService;
+  elements.tempMailExpiryNote.textContent = dict.tempMailExpiryNote;
+
+  elements.tempMailCreate.addEventListener('click', () => {
+    createTempMailbox();
+  });
+
+  elements.tempMailCopy.addEventListener('click', () => {
+    if (state.tempMail.address) {
+      copyToClipboard(state.tempMail.address, elements.tempMailCopy);
+    }
+  });
+
+  elements.tempMailRefresh.addEventListener('click', () => {
+    fetchTempMessages(true);
+  });
+}
+
+async function createTempMailbox() {
+  const dict = translations[state.language] || translations.ru;
+  elements.tempMailStatus.textContent = dict.tempMailStatusCreating;
+
+  try {
+    const response = await fetch('/api/temp-mailbox', { method: 'POST' });
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (data?.error === 'rate_limited') {
+        elements.tempMailStatus.textContent = dict.tempMailStatusRateLimit;
+        return;
+      }
+      if (data?.reason === 'provider_not_configured') {
+        elements.tempMailStatus.textContent = dict.tempMailStatusUnavailable;
+        return;
+      }
+      elements.tempMailStatus.textContent = dict.tempMailStatusError;
+      return;
+    }
+
+    state.tempMail.mailboxId = data.mailboxId;
+    state.tempMail.address = data.address;
+    state.tempMail.accessToken = data.accessToken;
+    state.tempMail.expiresAt = data.expiresAt;
+
+    renderMailbox();
+    startCountdown();
+    schedulePolling();
+    fetchTempMessages();
+  } catch (error) {
+    console.warn('temp_mail_create_failed', error);
+    elements.tempMailStatus.textContent = dict.tempMailStatusError;
+  }
+}
+
+function renderMailbox() {
+  const dict = translations[state.language] || translations.ru;
+  if (!state.tempMail.mailboxId) {
+    elements.tempMailBox.dataset.state = 'empty';
+    elements.tempMailAddress.textContent = '—';
+    elements.tempMailTimer.textContent = '';
+    elements.tempMailExpiryNote.textContent = '';
+    elements.tempMailEmpty.hidden = true;
+    elements.tempMailMessages.innerHTML = '';
+    return;
+  }
+
+  elements.tempMailBox.dataset.state = 'ready';
+  elements.tempMailAddress.textContent = state.tempMail.address;
+  elements.tempMailExpiryNote.textContent = dict.tempMailExpiryNote;
+}
+
+function schedulePolling() {
+  clearInterval(state.tempMail.pollTimer);
+  state.tempMail.pollTimer = setInterval(() => {
+    fetchTempMessages(true);
+  }, 12000);
+}
+
+function startCountdown() {
+  clearInterval(state.tempMail.countdownTimer);
+  updateCountdown();
+  state.tempMail.countdownTimer = setInterval(updateCountdown, 1000);
+}
+
+function updateCountdown() {
+  const dict = translations[state.language] || translations.ru;
+  if (!state.tempMail.expiresAt) {
+    elements.tempMailTimer.textContent = '';
+    return;
+  }
+  const remaining = state.tempMail.expiresAt - Date.now();
+  if (remaining <= 0) {
+    handleMailboxExpired();
+    return;
+  }
+
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000)
+    .toString()
+    .padStart(2, '0');
+  elements.tempMailTimer.textContent = dict.tempMailExpiresIn.replace('{time}', `${minutes}:${seconds}`);
+}
+
+function handleMailboxExpired() {
+  clearInterval(state.tempMail.countdownTimer);
+  clearInterval(state.tempMail.pollTimer);
+  const dict = translations[state.language] || translations.ru;
+  elements.tempMailTimer.textContent = dict.tempMailExpired;
+  elements.tempMailStatus.textContent = dict.tempMailExpired;
+}
+
+async function fetchTempMessages(silent = false) {
+  if (!state.tempMail.mailboxId || !state.tempMail.accessToken) return;
+  const dict = translations[state.language] || translations.ru;
+  if (!silent) {
+    elements.tempMailStatus.textContent = dict.tempMailRefresh;
+  }
+
+  try {
+    const response = await fetch(`/api/temp-mailbox/${state.tempMail.mailboxId}/messages?accessToken=${encodeURIComponent(state.tempMail.accessToken)}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (data?.error === 'expired') {
+        handleMailboxExpired();
+        return;
+      }
+      if (data?.reason === 'provider_not_configured') {
+        elements.tempMailStatus.textContent = dict.tempMailStatusUnavailable;
+        return;
+      }
+      elements.tempMailStatus.textContent = dict.tempMailStatusError;
+      return;
+    }
+
+    renderMessages(data.messages ?? []);
+    elements.tempMailStatus.textContent = '';
+  } catch (error) {
+    console.warn('temp_mail_messages_failed', error);
+    elements.tempMailStatus.textContent = dict.tempMailStatusError;
+  }
+}
+
+function renderMessages(messages) {
+  elements.tempMailMessages.innerHTML = '';
+  if (!messages || messages.length === 0) {
+    elements.tempMailEmpty.hidden = false;
+    return;
+  }
+
+  elements.tempMailEmpty.hidden = true;
+  messages.forEach((message) => {
+    const item = document.createElement('button');
+    item.className = 'message-item';
+    item.type = 'button';
+    item.dataset.id = message.id;
+    item.innerHTML = `
+      <div class="message-item__meta">
+        <span>${message.from ?? '—'}</span>
+        <span>${formatDate(message.receivedAt)}</span>
+      </div>
+      <p class="message-item__subject">${message.subject || '—'}</p>
+    `;
+    item.addEventListener('click', () => {
+      openMessage(message.id);
+    });
+    elements.tempMailMessages.appendChild(item);
+  });
+}
+
+async function openMessage(id) {
+  if (!state.tempMail.mailboxId || !state.tempMail.accessToken) return;
+  const dict = translations[state.language] || translations.ru;
+  elements.tempMailViewerPlaceholder.hidden = true;
+  elements.tempMailMessageContainer.hidden = false;
+  elements.tempMailMessageText.textContent = dict.tempMailStatusCreating;
+
+  try {
+    const response = await fetch(
+      `/api/temp-mailbox/${state.tempMail.mailboxId}/messages/${id}?accessToken=${encodeURIComponent(state.tempMail.accessToken)}`
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      if (data?.error === 'expired') {
+        handleMailboxExpired();
+        return;
+      }
+      elements.tempMailStatus.textContent = dict.tempMailStatusError;
+      return;
+    }
+
+    elements.tempMailMessageFrom.textContent = data.from ?? '';
+    elements.tempMailMessageSubject.textContent = data.subject ?? '';
+    elements.tempMailMessageDate.textContent = formatDate(data.receivedAt);
+    elements.tempMailMessageText.textContent = data.textBody ?? '';
+    elements.tempMailMessageHtml.innerHTML = data.htmlBodySanitized ?? '';
+  } catch (error) {
+    console.warn('temp_mail_detail_failed', error);
+    elements.tempMailStatus.textContent = dict.tempMailStatusError;
+  }
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return '';
+  try {
+    return new Intl.DateTimeFormat(state.language || 'ru', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: 'short'
+    }).format(new Date(timestamp));
+  } catch {
+    return new Date(timestamp).toLocaleString();
+  }
 }
 
 init();

@@ -257,6 +257,74 @@
           </div>
         </div>
       </section>
+
+      <section class="panel panel--full" aria-labelledby="temp-mail-title">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow" data-i18n="tempMailTag">Временная почта</p>
+            <h2 id="temp-mail-title" data-i18n="tempMailTitle">Временная почта на 10 минут</h2>
+            <p class="panel__hint" data-i18n="tempMailDescription">
+              Временный адрес помогает регистрироваться, не раскрывая основной e-mail. Ящик живёт 10 минут, письма исчезают
+              сами.
+            </p>
+          </div>
+        </div>
+
+        <div class="temp-mail" id="temp-mail">
+          <div class="temp-mail__actions">
+            <button type="button" class="button" id="temp-mail-create" data-i18n="tempMailCreate">
+              Создать временный адрес
+            </button>
+            <p class="meta__note" id="temp-mail-status"></p>
+          </div>
+
+          <div class="mailbox" data-state="empty">
+            <div class="mailbox__row">
+              <div>
+                <p class="meta__label" data-i18n="tempMailAddressLabel">Текущий адрес</p>
+                <p class="mailbox__address" id="temp-mail-address">—</p>
+              </div>
+              <div class="mailbox__actions">
+                <button type="button" class="button button--ghost" id="temp-mail-copy" data-i18n="tempMailCopy">
+                  Скопировать
+                </button>
+                <p class="meta__note" id="temp-mail-timer"></p>
+              </div>
+            </div>
+            <p class="meta__note" id="temp-mail-expiry-note"></p>
+          </div>
+
+          <div class="temp-mail__body">
+            <div class="message-pane">
+              <div class="message-pane__header">
+                <h3 data-i18n="tempMailMessages">Письма</h3>
+                <button type="button" class="chip chip--outline" id="temp-mail-refresh" data-i18n="tempMailRefresh">
+                  Обновить
+                </button>
+              </div>
+              <div id="temp-mail-messages" class="message-list" role="list"></div>
+              <p class="meta__note" id="temp-mail-empty" data-i18n="tempMailNoMessages">Пока писем нет.</p>
+            </div>
+            <div class="message-pane">
+              <div class="message-pane__header">
+                <h3 data-i18n="tempMailViewer">Письмо</h3>
+              </div>
+              <div class="message-viewer" id="temp-mail-viewer">
+                <p class="meta__note" id="temp-mail-viewer-placeholder" data-i18n="tempMailSelect">
+                  Выберите письмо, чтобы прочитать его.
+                </p>
+                <div id="temp-mail-message" hidden>
+                  <p class="meta__label" id="temp-mail-message-from"></p>
+                  <p class="meta__label" id="temp-mail-message-subject"></p>
+                  <p class="meta__note" id="temp-mail-message-date"></p>
+                  <pre class="message-viewer__body" id="temp-mail-message-text"></pre>
+                  <div class="message-viewer__html" id="temp-mail-message-html"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <dialog id="privacy-modal" hidden>
