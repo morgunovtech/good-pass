@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Good Pass — проверка стойкости пароля</title>
+    <meta
+      name="description"
+      content="Минималистичный помощник: проверка стойкости, время перебора, генерация паролей и Diceware-пассфраз."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#password-input">Перейти к проверке пароля</a>
+    <header class="topbar">
+      <div class="brand">
+        <p class="brand__eyebrow">Good Pass</p>
+        <h1 class="brand__title" data-i18n="title">Проверка пароля без лишних слов</h1>
+        <p class="brand__lead" data-i18n="subtitle">
+          Введите пароль, увидьте запас прочности и узнайте, что можно усилить.
+        </p>
+      </div>
+      <div class="topbar__controls">
+        <div class="control-group" role="group" aria-label="Язык">
+          <button class="chip" data-lang="ru" aria-pressed="true">RU</button>
+          <button class="chip" data-lang="en" aria-pressed="false">EN</button>
+          <button class="chip" data-lang="uz" aria-pressed="false">UZ</button>
+        </div>
+        <label class="control-group" for="theme-select" data-i18n="themeLabel">Тема</label>
+        <select id="theme-select" class="select">
+          <option value="auto" selected data-i18n="themeAuto">Авто</option>
+          <option value="light" data-i18n="themeLight">Светлая</option>
+          <option value="dark" data-i18n="themeDark">Тёмная</option>
+          <option value="high-contrast" data-i18n="themeContrast">Высокий контраст</option>
+        </select>
+      </div>
+    </header>
+
+    <main class="layout" aria-live="polite">
+      <section class="panel panel--full" aria-labelledby="analysis-title">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow" data-i18n="analysisTag">Проверка</p>
+            <h2 id="analysis-title" data-i18n="analysisTitle">Проверьте свой пароль</h2>
+            <p class="panel__hint" data-i18n="analysisHint">
+              Один ввод — и вы увидите краткую оценку, запас прочности и понятные подсказки.
+            </p>
+          </div>
+        </div>
+
+        <form class="checker" autocomplete="off" novalidate>
+          <label class="checker__label" for="password-input" data-i18n="passwordLabel">Ваш пароль</label>
+          <div class="checker__field">
+            <input
+              id="password-input"
+              class="checker__input"
+              type="password"
+              name="password"
+              minlength="1"
+              autocomplete="new-password"
+              placeholder="Например, Река_Трава!94"
+              aria-describedby="strength-label"
+              data-i18n-placeholder="passwordPlaceholder"
+            />
+            <button type="button" id="toggle-visibility" class="checker__toggle" aria-pressed="false">
+              <span data-i18n="show">Показать</span>
+            </button>
+          </div>
+          <button type="button" id="analyze-action" class="button" data-i18n="check">Проверить</button>
+        </form>
+
+        <div class="summary">
+          <div class="summary__score">
+            <p class="summary__label" data-i18n="scoreLabel">Оценка</p>
+            <div class="score" id="score">—</div>
+            <p id="strength-label" class="summary__note" data-i18n="strengthNote">Введите пароль, чтобы начать.</p>
+          </div>
+          <div class="summary__meter" aria-hidden="true">
+            <div class="meter"><div class="meter__fill" data-strength="0"></div></div>
+          </div>
+          <div class="summary__meta">
+            <div>
+              <p class="meta__label" data-i18n="entropyLabel">Запас прочности</p>
+              <p id="entropy" class="meta__value">—</p>
+            </div>
+            <div>
+              <p class="meta__label" data-i18n="timeLabel">Примерное время перебора</p>
+              <p id="time" class="meta__value">—</p>
+              <small id="guess-rate-note" class="meta__note">—</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3 data-i18n="goodTitle">Что уже хорошо</h3>
+            <ul id="strengths" class="list"></ul>
+          </div>
+          <div class="card">
+            <h3 data-i18n="todoTitle">Что усилить</h3>
+            <ul id="weaknesses" class="list"></ul>
+          </div>
+          <div class="card">
+            <h3 data-i18n="patternsTitle">Распознанные шаблоны</h3>
+            <ul id="patterns" class="list"></ul>
+          </div>
+        </div>
+
+        <div class="panel__stack">
+          <div class="inline-controls">
+            <fieldset class="fieldset">
+              <legend data-i18n="attackModel">Модель атакующего</legend>
+              <label class="chip chip--outline">
+                <input type="radio" name="attack-profile" value="online" />
+                <span data-i18n="attackOnline">Онлайн: медленно, с блокировками</span>
+              </label>
+              <label class="chip chip--outline">
+                <input type="radio" name="attack-profile" value="offline" checked />
+                <span data-i18n="attackOffline">Оффлайн: быстро, на мощном железе</span>
+              </label>
+            </fieldset>
+
+            <label class="select-group">
+              <span data-i18n="hashProfile">Какой хэш</span>
+              <select id="hash-profile" class="select">
+                <option value="md5">MD5 / SHA-1</option>
+                <option value="sha256">SHA-256</option>
+                <option value="bcrypt12">bcrypt 12</option>
+                <option value="argon2id" selected>Argon2id</option>
+              </select>
+              <small id="hash-description" class="meta__note"></small>
+            </label>
+          </div>
+
+          <div class="detectors">
+            <div class="detector" data-detector="personalData">
+              <div class="detector__header">
+                <p class="detector__label" data-i18n="detectorPersonal">Персональные данные</p>
+                <span class="detector__status">—</span>
+              </div>
+              <p class="detector__details"></p>
+            </div>
+            <div class="detector" data-detector="homoglyphs">
+              <div class="detector__header">
+                <p class="detector__label" data-i18n="detectorHomoglyphs">Похожие символы</p>
+                <span class="detector__status">—</span>
+              </div>
+              <p class="detector__details"></p>
+            </div>
+            <div class="detector" data-detector="layout">
+              <div class="detector__header">
+                <p class="detector__label" data-i18n="detectorLayout">Раскладка</p>
+                <span class="detector__status">—</span>
+              </div>
+              <p class="detector__details"></p>
+            </div>
+            <div class="detector" data-detector="keyboardWalk">
+              <div class="detector__header">
+                <p class="detector__label" data-i18n="detectorWalk">Дорожки клавиатуры</p>
+                <span class="detector__status">—</span>
+              </div>
+              <p class="detector__details"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stacked-actions">
+          <div>
+            <p class="meta__label" data-i18n="guessFormulaLabel">Как мы считаем время</p>
+            <p id="guess-formula" class="meta__note">Время рассчитывается как 2^энтропии / скорость подбора.</p>
+          </div>
+          <div class="hibp">
+            <button type="button" id="breach-check" class="button button--ghost" data-i18n="hibpButton">
+              Проверить утечки
+            </button>
+            <p id="breach-status" class="meta__label"></p>
+            <p id="breach-result" class="meta__note"></p>
+            <button class="link" type="button" data-open-modal="privacy-modal" data-i18n="hibpPrivacy">
+              Как работает k-анонимность
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel--split" aria-labelledby="generator-title">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow" data-i18n="generatorTag">Создание</p>
+            <h2 id="generator-title" data-i18n="generatorTitle">Сгенерируйте надёжный пароль</h2>
+            <p class="panel__hint" data-i18n="generatorHint">Нажмите кнопку, скопируйте, сохраните в менеджере паролей.</p>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="card card--muted">
+            <h3 data-i18n="passwordGen">Генератор пароля</h3>
+            <form id="generator-form" class="generator">
+              <label class="slider-label">
+                <span data-i18n="length">Длина</span>
+                <output id="generator-length-value" for="generator-length">16</output>
+              </label>
+              <input type="range" min="8" max="32" value="16" id="generator-length" />
+
+              <label class="checkbox">
+                <input type="checkbox" id="generator-uppercase" checked />
+                <span data-i18n="includeUpper">Заглавные буквы</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" id="generator-digits" checked />
+                <span data-i18n="includeDigits">Цифры</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" id="generator-symbols" checked />
+                <span data-i18n="includeSymbols">Символы</span>
+              </label>
+
+              <div class="generator__actions">
+                <button type="button" id="generate-password" class="button" data-i18n="generate">Сгенерировать</button>
+                <button type="button" id="copy-generated" class="button button--ghost" data-i18n="copy">Скопировать</button>
+              </div>
+              <p id="generated-password" class="generator__output" data-empty="true">—</p>
+            </form>
+          </div>
+
+          <div class="card card--muted">
+            <h3 data-i18n="passphraseGen">Diceware-пасфраза</h3>
+            <form class="generator">
+              <label class="slider-label">
+                <span data-i18n="wordCount">Число слов</span>
+                <output id="passphrase-count-value" for="passphrase-count">4</output>
+              </label>
+              <input type="range" min="3" max="12" value="4" id="passphrase-count" />
+
+              <label class="checkbox">
+                <input type="checkbox" id="passphrase-titlecase" />
+                <span data-i18n="titlecase">Каждое слово с заглавной</span>
+              </label>
+
+              <label class="select-group">
+                <span data-i18n="delimiter">Разделитель</span>
+                <select id="passphrase-delimiter" class="select">
+                  <option value=" ">Пробел</option>
+                  <option value="-">-</option>
+                  <option value="_">_</option>
+                  <option value=",">,</option>
+                  <option value=".">.</option>
+                </select>
+              </label>
+
+              <div class="generator__actions">
+                <button type="button" id="generate-passphrase" class="button" data-i18n="generate">Сгенерировать</button>
+                <button type="button" id="copy-passphrase" class="button button--ghost" data-i18n="copy">Скопировать</button>
+              </div>
+              <p id="passphrase-output" class="generator__output" data-empty="true">—</p>
+              <p id="passphrase-entropy" class="meta__note">—</p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel--full" aria-labelledby="temp-mail-title">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow" data-i18n="tempMailTag">Временная почта</p>
+            <h2 id="temp-mail-title" data-i18n="tempMailTitle">Получите временный адрес</h2>
+            <p class="panel__hint" data-i18n="tempMailDescription">
+              Временная почта помогает регистрироваться, не раскрывая основной адрес. Ящик живёт 10 минут.
+            </p>
+          </div>
+        </div>
+
+        <div class="temp-mail">
+          <div class="temp-mail__controls">
+            <button class="button" type="button" id="temp-mail-create" data-i18n="tempMailGenerate">
+              Создать временный адрес
+            </button>
+            <p class="temp-mail__note" data-i18n="tempMailInfo">
+              Доступ защищён уникальной ссылкой в этом браузере. После истечения 10 минут письма удаляются.
+            </p>
+          </div>
+
+          <div class="temp-mail__meta" id="temp-mail-meta" hidden>
+            <div class="temp-mail__row">
+              <div>
+                <p class="meta__label" data-i18n="tempMailAddress">Ваш временный адрес</p>
+                <p id="temp-mail-address" class="temp-mail__address">—</p>
+              </div>
+              <button type="button" class="button button--ghost" id="temp-mail-copy" data-i18n="copy">Скопировать</button>
+            </div>
+            <div class="temp-mail__row">
+              <p class="meta__label" data-i18n="tempMailExpiresIn">Осталось</p>
+              <p id="temp-mail-countdown" class="meta__value">10:00</p>
+              <button type="button" class="link" id="temp-mail-renew" data-i18n="tempMailRenew" hidden>
+                Создать новый адрес
+              </button>
+            </div>
+          </div>
+
+          <div class="temp-mail__layout" id="temp-mail-view" hidden>
+            <div class="temp-mail__list">
+              <div class="temp-mail__list-header">
+                <p class="meta__label" data-i18n="tempMailInbox">Письма</p>
+                <button type="button" class="button button--ghost" id="temp-mail-refresh" data-i18n="tempMailRefresh">
+                  Обновить
+                </button>
+              </div>
+              <div id="temp-mail-list" class="temp-mail__messages" role="list"></div>
+              <p id="temp-mail-empty" class="list__empty" data-i18n="tempMailEmpty">Пока писем нет.</p>
+              <p id="temp-mail-error" class="temp-mail__error"></p>
+            </div>
+            <div class="temp-mail__detail" aria-live="polite">
+              <p class="meta__label" data-i18n="tempMailMessageHeading">Содержимое письма</p>
+              <div id="temp-mail-detail" class="temp-mail__body" aria-live="polite">
+                <p class="list__empty" data-i18n="tempMailSelectPrompt">Выберите письмо, чтобы прочитать.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="privacy-modal" hidden>
+      <div class="modal">
+        <div class="modal__header">
+          <h3 data-i18n="privacyTitle">Почему запрос безопасен</h3>
+          <button class="chip" type="button" data-close-modal>×</button>
+        </div>
+        <div class="modal__body">
+          <p data-i18n="privacyText1">
+            Мы используем k-анонимность: отправляется только первые 5 символов SHA-1 хэша. Сам пароль не покидает ваше
+            устройство.
+          </p>
+          <p data-i18n="privacyText2">Сервис Have I Been Pwned возвращает только статистику по совпадениям.</p>
+        </div>
+        <div class="modal__footer">
+          <button class="button" type="button" data-close-modal data-i18n="close">Закрыть</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
