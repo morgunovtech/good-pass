@@ -44,7 +44,7 @@ describe('password analyzer', () => {
 
   it('respects unicode and symbol contributions in charset size', () => {
     const charset = calculateCharsetSize('Åßç∂1!');
-    assert.ok(charset >= 10 + 33 + 100);
+    assert.ok(charset >= 10 + 32 + 100);
   });
 
   it('estimates cracking time using configured guess rate', () => {
@@ -62,5 +62,27 @@ describe('password analyzer', () => {
     assert.equal(formatDuration(0.5), 'Мгновенно');
     assert.equal(formatDuration(65), '1 минута и 5 секунд');
     assert.equal(formatDuration(Number.POSITIVE_INFINITY), 'Практически не поддаётся перебору');
+  });
+
+  it('computes entropy for mixed alphabet passwords using H = L * log2(S)', () => {
+    const password = 'aA1!aA1!aA';
+    const result = analyzePassword(password, { attackProfile: 'offline', hashProfile: 'argon2id' });
+    const expectedEntropy = password.length * Math.log2(94);
+    assert.ok(Math.abs(result.entropyBits - expectedEntropy) < 0.5);
+  });
+
+  it('estimates diceware entropy per word correctly', () => {
+    const phrase = 'labe-leno-lamo-lari';
+    const result = analyzePassword(phrase, { attackProfile: 'offline', hashProfile: 'argon2id' });
+    const expectedPerWord = Math.log2(2048);
+    assert.equal(result.passphrase.wordCount, 4);
+    assert.ok(Math.abs(result.passphrase.entropyPerWord - expectedPerWord) < 0.01);
+    assert.ok(Math.abs(result.passphrase.totalEntropy - expectedPerWord * 4) < 0.5);
+  });
+
+  it('increases strength estimate when length grows', () => {
+    const shortPass = analyzePassword('Pa55!word', { attackProfile: 'offline', hashProfile: 'argon2id' });
+    const longPass = analyzePassword('Pa55!wordExtra', { attackProfile: 'offline', hashProfile: 'argon2id' });
+    assert.ok(longPass.entropyBits > shortPass.entropyBits);
   });
 });

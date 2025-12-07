@@ -267,7 +267,8 @@ export function calculateCharsetSize(password) {
   if (/[а-яё]/.test(password)) size += 33;
   if (/[А-ЯЁ]/.test(password)) size += 33;
   if (hasDigits) size += 10;
-  if (hasSymbols) size += 33;
+  // Printable ASCII punctuation (без пробела) ≈ 32 символа — корректировка для формулы H = L * log2(S)
+  if (hasSymbols) size += 32;
   if (hasSpace) size += 1;
   if (hasNonAscii) size += 100;
 
