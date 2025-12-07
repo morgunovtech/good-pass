@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { getTempMailConfigStatus } from '../functions/lib/tempMailProvider.js';
 
 describe('getTempMailConfigStatus', () => {
-  it('flags missing base url', () => {
+  it('allows default base url when not provided', () => {
     const status = getTempMailConfigStatus({});
-    assert.equal(status.ok, false);
-    assert.deepEqual(status.missing, ['TEMP_MAIL_API_BASE_URL']);
+    assert.equal(status.ok, true);
+    assert.deepEqual(status.missing, []);
   });
 
   it('requires api key when flagged', () => {

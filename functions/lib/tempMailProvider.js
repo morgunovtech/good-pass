@@ -1,10 +1,13 @@
+const DEFAULT_BASE_URL = 'https://www.1secmail.com/api/v1';
+
 export function getTempMailConfigStatus(env) {
   const missing = [];
-  if (!env?.TEMP_MAIL_API_BASE_URL) missing.push('TEMP_MAIL_API_BASE_URL');
+  const baseUrl = env?.TEMP_MAIL_API_BASE_URL || DEFAULT_BASE_URL;
+  if (!baseUrl) missing.push('TEMP_MAIL_API_BASE_URL');
   if (env?.TEMP_MAIL_API_REQUIRE_KEY === 'true' && !env?.TEMP_MAIL_API_KEY) {
     missing.push('TEMP_MAIL_API_KEY');
   }
-  return { ok: missing.length === 0, missing };
+  return { ok: missing.length === 0, missing, baseUrl };
 }
 
 function assertConfigured(env) {
@@ -17,38 +20,50 @@ function assertConfigured(env) {
   }
 }
 
+function resolveBase(env) {
+  return env?.TEMP_MAIL_API_BASE_URL || DEFAULT_BASE_URL;
+}
+
+function toAuthHeaders(env) {
+  const headers = { 'Accept': 'application/json' };
+  if (env?.TEMP_MAIL_API_KEY) {
+    // TODO: adjust auth scheme for provider if it differs from a simple bearer key
+    headers['Authorization'] = `Bearer ${env.TEMP_MAIL_API_KEY}`;
+  }
+  return headers;
+}
+
 export async function createMailbox(env) {
   assertConfigured(env);
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
-  const apiKey = env?.TEMP_MAIL_API_KEY;
+  const baseUrl = resolveBase(env);
+  const url = `${baseUrl}/?action=genRandomMailbox&count=1`; // 1secmail: returns ["login@domain"]
+  const headers = toAuthHeaders(env);
 
-  const url = `${baseUrl}/mailboxes`; // TODO: replace with provider-specific endpoint
-  const headers = { 'Content-Type': 'application/json' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`; // TODO: adjust auth scheme for provider
-
-  // TODO: add provider-specific payload if needed
-  const response = await fetch(url, { method: 'POST', headers });
+  // NOTE: 1secmail does not require a body for generation; adjust payload for other providers if needed.
+  const response = await fetch(url, { method: 'GET', headers });
   if (!response.ok) {
     throw new Error(`Temp-mail provider error: ${response.status}`);
   }
 
   const data = await response.json();
+  const address = Array.isArray(data) ? data[0] : data?.address ?? data?.email;
+  if (!address) {
+    throw new Error('Temp-mail provider returned empty address');
+  }
 
-  // TODO: map provider response fields to { id, address }
   return {
-    id: data.id ?? data.mailboxId ?? data.address,
-    address: data.address ?? data.email,
+    // 1secmail uses the address as the identifier; if you switch providers, map to their mailbox id here.
+    id: address,
+    address,
   };
 }
 
 export async function listMessages(env, mailboxId) {
   assertConfigured(env);
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
-  const apiKey = env?.TEMP_MAIL_API_KEY;
-
-  const url = `${baseUrl}/mailboxes/${encodeURIComponent(mailboxId)}/messages`; // TODO: adjust path
-  const headers = { 'Accept': 'application/json' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`; // TODO: adjust auth scheme
+  const baseUrl = resolveBase(env);
+  const { login, domain } = splitAddress(mailboxId);
+  const url = `${baseUrl}/?action=getMessages&login=${encodeURIComponent(login)}&domain=${encodeURIComponent(domain)}`;
+  const headers = toAuthHeaders(env);
 
   const response = await fetch(url, { method: 'GET', headers });
   if (!response.ok) {
@@ -56,24 +71,21 @@ export async function listMessages(env, mailboxId) {
   }
 
   const data = await response.json();
-  // TODO: map provider list payload
-  return (data.messages ?? data ?? []).map((item) => ({
+  return (Array.isArray(data) ? data : data?.messages ?? []).map((item) => ({
     id: item.id ?? item.messageId,
     from: item.from ?? item.sender,
     subject: item.subject ?? '(без темы)',
-    receivedAt: item.receivedAt ?? item.createdAt ?? item.date,
+    receivedAt: item.date ?? item.receivedAt ?? item.createdAt,
     isRead: Boolean(item.isRead ?? false),
   }));
 }
 
 export async function getMessage(env, mailboxId, messageId) {
   assertConfigured(env);
-  const baseUrl = env?.TEMP_MAIL_API_BASE_URL;
-  const apiKey = env?.TEMP_MAIL_API_KEY;
-
-  const url = `${baseUrl}/mailboxes/${encodeURIComponent(mailboxId)}/messages/${encodeURIComponent(messageId)}`; // TODO: adjust path
-  const headers = { 'Accept': 'application/json' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`; // TODO: adjust auth scheme
+  const baseUrl = resolveBase(env);
+  const { login, domain } = splitAddress(mailboxId);
+  const url = `${baseUrl}/?action=readMessage&login=${encodeURIComponent(login)}&domain=${encodeURIComponent(domain)}&id=${encodeURIComponent(messageId)}`;
+  const headers = toAuthHeaders(env);
 
   const response = await fetch(url, { method: 'GET', headers });
   if (!response.ok) {
@@ -81,14 +93,23 @@ export async function getMessage(env, mailboxId, messageId) {
   }
 
   const data = await response.json();
-  // TODO: map provider detail payload
   return {
     id: data.id ?? data.messageId ?? messageId,
     from: data.from ?? data.sender,
     to: data.to ?? data.recipient,
     subject: data.subject ?? '(без темы)',
-    receivedAt: data.receivedAt ?? data.createdAt ?? data.date,
-    textBody: data.text ?? data.textBody ?? '',
-    htmlBody: data.html ?? data.htmlBody ?? '',
+    receivedAt: data.date ?? data.receivedAt ?? data.createdAt,
+    textBody: data.textBody ?? data.text ?? '',
+    htmlBody: data.htmlBody ?? data.html ?? '',
   };
+}
+
+function splitAddress(address) {
+  if (!address || typeof address !== 'string' || !address.includes('@')) {
+    const error = new Error('Invalid mailbox address');
+    error.code = 'invalid_address';
+    throw error;
+  }
+  const [login, domain] = address.split('@');
+  return { login, domain };
 }

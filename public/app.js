@@ -78,7 +78,7 @@ const translations = {
     tempMailLimit: 'Достигнут лимит активных ящиков. Попробуйте позже.',
     tempMailRateLimited: 'Слишком частые запросы. Повторите через минуту.',
     tempMailNotConfigured:
-      'Временная почта не настроена. Добавьте TEMP_MAIL_API_BASE_URL и ключ провайдера (если он нужен) в окружение.'
+      'Временная почта недоступна. Попробуйте позже или укажите свои TEMP_MAIL_API_* переменные, если используете другой сервис.'
   },
   en: {
     title: 'Plain password check',
@@ -154,7 +154,7 @@ const translations = {
     tempMailLimit: 'Active inbox limit reached. Please try again later.',
     tempMailRateLimited: 'Too many requests. Please retry in a minute.',
     tempMailNotConfigured:
-      'Temp mail is not configured. Set TEMP_MAIL_API_BASE_URL and the provider key (if required) in the environment.'
+      'Temp mail is unavailable. Try again later or provide TEMP_MAIL_API_* vars if you prefer another provider.'
   },
   uz: {
     title: 'Parolni tekshirish',
@@ -228,7 +228,8 @@ const translations = {
     tempMailLoading: 'Yuklanmoqda…',
     tempMailLimit: 'Chegara oshib ketdi. Keyinroq urinib ko‘ring. (TODO: uz)',
     tempMailRateLimited: 'So‘rovlar juda ko‘p. Bir ozdan so‘ng urinib ko‘ring. (TODO: uz)',
-    tempMailNotConfigured: 'Vaqtinchalik pochta sozlanmadi. TEMP_MAIL_API_BASE_URL ni qo‘shing. (TODO: uz)'
+    tempMailNotConfigured:
+      'Vaqtinchalik pochta ishlamayapti. Keyinroq urinib ko‘ring yoki o‘zingizning TEMP_MAIL_API_* sozlamalaringizni bering. (TODO: uz)'
   }
 };
 
