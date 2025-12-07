@@ -1,5 +1,5 @@
 import { createMailbox, getTempMailConfigStatus } from '../../lib/tempMailProvider.js';
-import { cleanupMemory, countActiveMailboxes, enforceRateLimit, hashFingerprint, saveMailbox } from '../../lib/tempMailStore.js';
+import { cleanupMemory, countActiveMailboxes, enforceRateLimit, hashFingerprint, saveMailbox, sealMailboxRecord } from '../../lib/tempMailStore.js';
 
 const TTL_MS = 10 * 60 * 1000;
 
@@ -40,16 +40,18 @@ export async function onRequestPost(context) {
   }
 
   const id = crypto.randomUUID();
-  const accessToken = crypto.randomUUID();
+  // accessToken now contains a sealed payload so stateless deployments still work between requests.
   const record = {
     id,
     address: providerMailbox.address,
     providerMailboxId: providerMailbox.id,
-    accessToken,
     createdAt: now,
     expiresAt: now + TTL_MS,
     fingerprint,
   };
+
+  const accessToken = await sealMailboxRecord(env, record);
+  record.accessToken = accessToken;
 
   await saveMailbox(env, record);
 
@@ -57,7 +59,7 @@ export async function onRequestPost(context) {
     mailboxId: record.id,
     address: record.address,
     expiresAt: record.expiresAt,
-    accessToken: record.accessToken,
+    accessToken,
   });
 }
 

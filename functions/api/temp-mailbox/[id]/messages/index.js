@@ -1,5 +1,5 @@
 import { getTempMailConfigStatus, listMessages } from '../../../../lib/tempMailProvider.js';
-import { cleanupMemory, getMailbox } from '../../../../lib/tempMailStore.js';
+import { cleanupMemory, resolveMailbox } from '../../../../lib/tempMailStore.js';
 
 export async function onRequestGet(context) {
   const { params, request, env } = context;
@@ -10,8 +10,9 @@ export async function onRequestGet(context) {
   }
   cleanupMemory(now);
 
-  const mailbox = await getMailbox(env, params.id);
-  const authError = await validateAccess(request, mailbox, now);
+  const token = request.headers.get('x-access-token') || new URL(request.url).searchParams.get('accessToken');
+  const mailbox = await resolveMailbox(env, params.id, token);
+  const authError = await validateAccess(mailbox, token, now);
   if (authError) return authError;
 
   try {
@@ -42,7 +43,7 @@ function jsonResponse(payload, status = 200) {
   });
 }
 
-async function validateAccess(request, mailbox, now) {
+async function validateAccess(mailbox, token, now) {
   if (!mailbox) {
     return jsonResponse({ error: 'not_found' }, 404);
   }
@@ -51,7 +52,6 @@ async function validateAccess(request, mailbox, now) {
     return jsonResponse({ error: 'expired' }, 410);
   }
 
-  const token = request.headers.get('x-access-token') || new URL(request.url).searchParams.get('accessToken');
   if (!token || token !== mailbox.accessToken) {
     return jsonResponse({ error: 'unauthorized' }, 401);
   }

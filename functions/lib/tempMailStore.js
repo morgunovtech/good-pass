@@ -4,8 +4,10 @@ const requestLog = new Map();
 const ACTIVE_LIMIT_PER_IP = 3;
 const REQUEST_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 20;
+const DEFAULT_TOKEN_SECRET = 'temp-mail-demo-secret';
 
 export async function saveMailbox(env, record) {
+  // Persist if KV is available; the sealed token keeps the flow working even without stateful storage.
   if (env?.TEMP_MAIL_STORE) {
     const key = `mailbox:${record.id}`;
     const expiration = Math.floor(record.expiresAt / 1000);
@@ -65,4 +67,89 @@ export function hashFingerprint(ip, userAgent = '') {
   return crypto.subtle
     .digest('SHA-256', new TextEncoder().encode(data))
     .then((buffer) => Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, '0')).join(''));
+}
+
+export async function sealMailboxRecord(env, record) {
+  const secret = env?.TEMP_MAIL_TOKEN_SECRET || DEFAULT_TOKEN_SECRET;
+  const payload = {
+    id: record.id,
+    address: record.address,
+    providerMailboxId: record.providerMailboxId,
+    createdAt: record.createdAt,
+    expiresAt: record.expiresAt,
+    fingerprint: record.fingerprint,
+  };
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signature = await hmacSignature(secret, encodedPayload);
+  return `${encodedPayload}.${signature}`;
+}
+
+export async function unsealMailboxRecord(env, token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const [encodedPayload, providedSignature] = token.split('.');
+  if (!encodedPayload || !providedSignature) return null;
+  const secret = env?.TEMP_MAIL_TOKEN_SECRET || DEFAULT_TOKEN_SECRET;
+  const valid = await verifyHmac(secret, encodedPayload, providedSignature);
+  if (!valid) return null;
+  try {
+    const payload = JSON.parse(base64UrlDecode(encodedPayload));
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function resolveMailbox(env, id, token) {
+  const stored = await getMailbox(env, id);
+  if (stored) return stored;
+  const sealed = await unsealMailboxRecord(env, token);
+  if (sealed && sealed.id === id) {
+    return { ...sealed, accessToken: token };
+  }
+  return null;
+}
+
+async function hmacSignature(secret, message) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+  return base64UrlEncode(new Uint8Array(signature));
+}
+
+async function verifyHmac(secret, message, expectedSignature) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  const signatureBuffer = base64UrlToBuffer(expectedSignature);
+  return crypto.subtle.verify('HMAC', key, signatureBuffer, new TextEncoder().encode(message));
+}
+
+function base64UrlEncode(input) {
+  const buffer = typeof input === 'string' ? new TextEncoder().encode(input) : input;
+  return Buffer.from(buffer)
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function base64UrlDecode(input) {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  return Buffer.from(padded, 'base64').toString('utf8');
+}
+
+function base64UrlToBuffer(input) {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  return Buffer.from(padded, 'base64');
 }

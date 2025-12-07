@@ -50,6 +50,7 @@ npm test
    Переменные можно не задавать, если вас устраивает этот сервис.
    Если нужен другой провайдер, переопределите `TEMP_MAIL_API_BASE_URL` и, при необходимости, добавьте `TEMP_MAIL_API_KEY`
    (и `TEMP_MAIL_API_REQUIRE_KEY=true`, если пустой ключ не допускается).
+   Если хотите подписывать токены собственным ключом, добавьте `TEMP_MAIL_TOKEN_SECRET`.
    Если используете KV для хранения токенов, привяжите `TEMP_MAIL_STORE`. Пример — `.env.example`.
 
 ### API временной почты
@@ -57,6 +58,9 @@ npm test
 - `POST /api/temp-mailbox` — создаёт временный адрес, возвращает `mailboxId`, `address`, `expiresAt`, `accessToken`.
 - `GET /api/temp-mailbox/:id/messages?accessToken=...` — список писем (proxy к выбранному провайдеру).
 - `GET /api/temp-mailbox/:id/messages/:messageId?accessToken=...` — детальный просмотр с санитайзером HTML.
+
+Токен (`accessToken`) содержит подписанную информацию о ящике и сроке жизни, поэтому функционал работает даже без
+подключённого KV. При наличии `TEMP_MAIL_STORE` записи также кешируются с TTL для дополнительной валидации и лимитов.
 
 Все вызовы идут через Cloudflare Function, поэтому браузер не обращается напрямую к внешнему API.
 
