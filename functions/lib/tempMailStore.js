@@ -134,22 +134,47 @@ async function verifyHmac(secret, message, expectedSignature) {
 }
 
 function base64UrlEncode(input) {
-  const buffer = typeof input === 'string' ? new TextEncoder().encode(input) : input;
-  return Buffer.from(buffer)
-    .toString('base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+  const bytes = typeof input === 'string' ? new TextEncoder().encode(input) : new Uint8Array(input);
+  const base64 = bufferToBase64(bytes);
+  return base64.replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 function base64UrlDecode(input) {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-  return Buffer.from(padded, 'base64').toString('utf8');
+  const bytes = base64ToBuffer(padded);
+  return new TextDecoder().decode(bytes);
 }
 
 function base64UrlToBuffer(input) {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-  return Buffer.from(padded, 'base64');
+  return base64ToBuffer(padded);
+}
+
+function bufferToBase64(bytes) {
+  // Cloudflare Workers do not expose Buffer, so use web-safe base64 helpers with a Node fallback.
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes).toString('base64');
+  }
+
+  let binary = '';
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary);
+}
+
+function base64ToBuffer(base64) {
+  // Cloudflare Workers do not expose Buffer, so use web-safe base64 helpers with a Node fallback.
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(base64, 'base64');
+  }
+
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
