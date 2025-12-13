@@ -1,16 +1,14 @@
+// Temp mail provider built around the public 1secmail API (no tokens required).
+// Includes a mock mode for offline diagnostics.
 const DEFAULT_BASE_URL = 'https://www.1secmail.com/api/v1';
-// Default only to domains documented by 1secmail; stale domains were causing provider errors.
-const DEFAULT_DOMAINS = ['1secmail.com', '1secmail.org', '1secmail.net', 'wwjmp.com', 'esiix.com', 'yoggm.com'];
-const DOMAIN_CACHE_MS = 5 * 60 * 1000;
-let cachedDomains = null;
-let cachedDomainsAt = 0;
+const DEFAULT_DOMAINS = ['1secmail.com', '1secmail.org', '1secmail.net'];
+const FETCH_TIMEOUT_MS = 8000;
 
 export function getTempMailConfigStatus(env) {
-  const missing = [];
   const baseUrl = env?.TEMP_MAIL_API_BASE_URL || DEFAULT_BASE_URL;
-  if (isMockMode(env)) {
-    return { ok: true, missing: [], baseUrl: 'mock' };
-  }
+  if (isMockMode(env)) return { ok: true, missing: [], baseUrl: 'mock' };
+
+  const missing = [];
   if (!baseUrl) missing.push('TEMP_MAIL_API_BASE_URL');
   if (env?.TEMP_MAIL_API_REQUIRE_KEY === 'true' && !env?.TEMP_MAIL_API_KEY) {
     missing.push('TEMP_MAIL_API_KEY');
@@ -31,19 +29,24 @@ function assertConfigured(env) {
 
 export async function createMailbox(env) {
   if (isMockMode(env)) {
-    const id = crypto.randomUUID();
-    return { id, address: `test-${id.slice(0, 8)}@example.test` };
+    const login = `mock${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}`;
+    const domain = 'example.test';
+    return { id: `${login}:${domain}`, address: `${login}@${domain}` };
   }
 
-  // Для 1secmail почтовый ящик не требует предварительного создания.
-  // Генерируем логин сами, выбираем разрешённый домен и сразу возвращаем адрес.
   const baseUrl = assertConfigured(env);
-  const domain = await pickDomain(env, baseUrl);
+  const allowList = parseAllowList(env?.TEMP_MAIL_DOMAINS);
+
+  // Prefer provider-generated addresses when we are not forcing a domain.
+  if (!allowList.length) {
+    const generated = await tryGenerateViaApi(baseUrl, env?.TEMP_MAIL_API_KEY);
+    if (generated) return generated;
+  }
+
+  // Fallback: locally generate login and use allowlist or documented defaults.
   const login = generateLogin();
-  return {
-    id: `${login}:${domain}`,
-    address: `${login}@${domain}`,
-  };
+  const domain = allowList.length ? pickRandom(allowList) : pickRandom(DEFAULT_DOMAINS);
+  return { id: `${login}:${domain}`, address: `${login}@${domain}` };
 }
 
 export async function listMessages(env, mailboxId) {
@@ -62,14 +65,11 @@ export async function listMessages(env, mailboxId) {
   const baseUrl = assertConfigured(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
   const { login, domain } = parseMailboxIdentifier(mailboxId);
-
   const url = `${baseUrl}/?action=getMessages&login=${encodeURIComponent(login)}&domain=${encodeURIComponent(domain)}`;
-  const headers = { Accept: 'application/json', 'User-Agent': 'good-pass-temp-mail/1.0' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-
+  const headers = buildHeaders(apiKey);
   const data = await fetchJson(url, headers);
   return (Array.isArray(data) ? data : []).map((item) => ({
-    id: item.id ?? item.messageId,
+    id: item.id ?? item.messageId ?? String(item._id ?? ''),
     from: item.from ?? item.sender ?? '',
     subject: item.subject ?? '(без темы)',
     receivedAt: item.date ?? item.receivedAt ?? item.createdAt,
@@ -79,10 +79,11 @@ export async function listMessages(env, mailboxId) {
 
 export async function getMessage(env, mailboxId, messageId) {
   if (isMockMode(env)) {
+    const address = mailboxId.includes('@') ? mailboxId : mailboxId.replace(':', '@');
     return {
       id: messageId,
       from: 'example@demo.test',
-      to: mailboxId.includes('@') ? mailboxId : mailboxId.replace(':', '@'),
+      to: address,
       subject: 'Тестовое письмо (mock)',
       receivedAt: new Date().toISOString(),
       textBody: 'Это пример письма из мок-провайдера. Сервис подключен корректно.',
@@ -93,11 +94,8 @@ export async function getMessage(env, mailboxId, messageId) {
   const baseUrl = assertConfigured(env);
   const apiKey = env?.TEMP_MAIL_API_KEY;
   const { login, domain } = parseMailboxIdentifier(mailboxId);
-
   const url = `${baseUrl}/?action=readMessage&login=${encodeURIComponent(login)}&domain=${encodeURIComponent(domain)}&id=${encodeURIComponent(messageId)}`;
-  const headers = { Accept: 'application/json', 'User-Agent': 'good-pass-temp-mail/1.0' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-
+  const headers = buildHeaders(apiKey);
   const data = await fetchJson(url, headers);
   return {
     id: data.id ?? data.messageId ?? messageId,
@@ -111,85 +109,73 @@ export async function getMessage(env, mailboxId, messageId) {
 }
 
 function parseMailboxIdentifier(mailboxId) {
-  // поддерживаем как plain e-mail (login@domain), так и сохранённый id вида "login:domain"
   if (!mailboxId) throw new Error('Missing mailbox id');
-  if (mailboxId.includes('@')) {
-    return parseMailboxAddress(mailboxId);
-  }
-  const [login, domain] = mailboxId.split(':');
-  if (!login || !domain) {
-    throw new Error('Invalid mailbox identifier');
-  }
+  if (mailboxId.includes('@')) return parseMailboxAddress(mailboxId);
+  const [login, domain] = String(mailboxId).split(':');
+  if (!login || !domain) throw new Error('Invalid mailbox identifier');
   return { login, domain };
 }
 
 function parseMailboxAddress(address) {
   const [login, domain] = String(address).split('@');
-  if (!login || !domain) {
-    throw new Error('Invalid mailbox address');
-  }
+  if (!login || !domain) throw new Error('Invalid mailbox address');
   return { login, domain };
 }
 
-async function pickDomain(env, baseUrl) {
-  const allowList = (env?.TEMP_MAIL_DOMAINS || '')
+function parseAllowList(raw) {
+  return (raw || '')
     .split(',')
     .map((d) => d.trim())
     .filter(Boolean);
-  if (allowList.length) {
-    return allowList[Math.floor(Math.random() * allowList.length)];
-  }
-
-  const now = Date.now();
-  if (cachedDomains && now - cachedDomainsAt < DOMAIN_CACHE_MS && cachedDomains.length) {
-    return cachedDomains[Math.floor(Math.random() * cachedDomains.length)];
-  }
-
-  try {
-    const liveDomains = await fetchDomainList(env, baseUrl);
-    if (Array.isArray(liveDomains) && liveDomains.length) {
-      cachedDomains = liveDomains;
-      cachedDomainsAt = now;
-      return liveDomains[Math.floor(Math.random() * liveDomains.length)];
-    }
-  } catch (error) {
-    console.error(
-      JSON.stringify({
-        level: 'warn',
-        msg: 'temp-mail domain list fetch failed, falling back to defaults',
-        error: error.message,
-        code: error.code,
-      })
-    );
-  }
-
-  return DEFAULT_DOMAINS[Math.floor(Math.random() * DEFAULT_DOMAINS.length)];
 }
 
 function generateLogin() {
-  const random = crypto.randomUUID().replace(/-/g, '');
-  return `gp${random.slice(0, 12)}`;
+  return `gp${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
 }
 
-async function fetchDomainList(env, baseUrl) {
-  const apiKey = env?.TEMP_MAIL_API_KEY;
-  const url = `${baseUrl}/?action=getDomainList`;
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+async function tryGenerateViaApi(baseUrl, apiKey) {
+  try {
+    const url = `${baseUrl}/?action=genRandomMailbox&count=1`;
+    const headers = buildHeaders(apiKey);
+    const data = await fetchJson(url, headers);
+    const address = Array.isArray(data) ? data[0] : null;
+    if (!address || !String(address).includes('@')) return null;
+    const { login, domain } = parseMailboxAddress(address);
+    return { id: `${login}:${domain}`, address: `${login}@${domain}` };
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        msg: 'temp-mail provider genRandomMailbox failed; falling back to local generation',
+        error: error.message,
+        code: error.code,
+        details: error.details,
+      })
+    );
+    return null;
+  }
+}
+
+function buildHeaders(apiKey) {
   const headers = { Accept: 'application/json', 'User-Agent': 'good-pass-temp-mail/1.0' };
   if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-  const data = await fetchJson(url, headers);
-  if (!Array.isArray(data)) return DEFAULT_DOMAINS;
-  // Filter to simple domain tokens only to avoid injection from upstream.
-  return data.map((d) => String(d).trim()).filter((d) => /^[a-z0-9.-]+$/i.test(d));
+  return headers;
 }
 
 async function fetchJson(url, headers) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const response = await fetch(url, { method: 'GET', headers, signal: controller.signal });
     if (!response.ok) {
       const errorBody = await safeReadText(response);
-      console.error(JSON.stringify({ level: 'error', msg: 'temp-mail provider non-200', status: response.status, errorBody }));
+      console.error(
+        JSON.stringify({ level: 'error', msg: 'temp-mail provider non-200', status: response.status, errorBody })
+      );
       const error = new Error(`Temp-mail provider error: ${response.status}`);
       error.code = 'provider_unavailable';
       error.details = errorBody;

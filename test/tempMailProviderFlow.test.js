@@ -7,8 +7,8 @@ const originalFetch = global.fetch;
 describe('temp mail provider (1secmail defaults)', () => {
   beforeEach(() => {
     global.fetch = async (url) => {
-      if (String(url).includes('getDomainList')) {
-        return new Response(JSON.stringify(['1secmail.com', '1secmail.org']), { status: 200 });
+      if (String(url).includes('genRandomMailbox')) {
+        return new Response(JSON.stringify(['user1@1secmail.com']), { status: 200 });
       }
       if (String(url).includes('getMessages')) {
         return new Response(
@@ -43,6 +43,12 @@ describe('temp mail provider (1secmail defaults)', () => {
     assert.ok(mailbox.id.includes(':'));
   });
 
+  it('creates mailbox via provider when allow list empty', async () => {
+    const mailbox = await createMailbox({});
+    assert.equal(mailbox.address, 'user1@1secmail.com');
+    assert.equal(mailbox.id, 'user1:1secmail.com');
+  });
+
   it('maps listMessages payload', async () => {
     const messages = await listMessages({}, 'demo:example.test');
     assert.equal(messages.length, 1);
@@ -60,11 +66,6 @@ describe('temp mail provider (1secmail defaults)', () => {
     assert.equal(message.subject, 'Hello');
     assert.equal(message.textBody, 'Hi there');
     assert.equal(message.htmlBody.includes('Hi there'), true);
-  });
-
-  it('falls back to live domain list when allow list is absent', async () => {
-    const mailbox = await createMailbox({});
-    assert.ok(mailbox.address.endsWith('@1secmail.com') || mailbox.address.endsWith('@1secmail.org'));
   });
 });
 
