@@ -1,16 +1,9 @@
 const DEFAULT_BASE_URL = 'https://www.1secmail.com/api/v1';
-const DEFAULT_DOMAINS = [
-  '1secmail.com',
-  '1secmail.org',
-  '1secmail.net',
-  'wwjmp.com',
-  'icznn.com',
-  'ezztt.com',
-  'vddaz.com',
-  'oosln.com',
-  'vjuum.com',
-  'txcct.com',
-];
+// Default only to domains documented by 1secmail; stale domains were causing provider errors.
+const DEFAULT_DOMAINS = ['1secmail.com', '1secmail.org', '1secmail.net', 'wwjmp.com', 'esiix.com', 'yoggm.com'];
+const DOMAIN_CACHE_MS = 5 * 60 * 1000;
+let cachedDomains = null;
+let cachedDomainsAt = 0;
 
 export function getTempMailConfigStatus(env) {
   const missing = [];
@@ -44,8 +37,8 @@ export async function createMailbox(env) {
 
   // Для 1secmail почтовый ящик не требует предварительного создания.
   // Генерируем логин сами, выбираем разрешённый домен и сразу возвращаем адрес.
-  assertConfigured(env);
-  const domain = pickDomain(env);
+  const baseUrl = assertConfigured(env);
+  const domain = await pickDomain(env, baseUrl);
   const login = generateLogin();
   return {
     id: `${login}:${domain}`,
@@ -138,16 +131,55 @@ function parseMailboxAddress(address) {
   return { login, domain };
 }
 
-function pickDomain(env) {
-  const allowList = (env?.TEMP_MAIL_DOMAINS || '').split(',').map((d) => d.trim()).filter(Boolean);
-  const domains = allowList.length ? allowList : DEFAULT_DOMAINS;
-  const index = Math.floor(Math.random() * domains.length);
-  return domains[index];
+async function pickDomain(env, baseUrl) {
+  const allowList = (env?.TEMP_MAIL_DOMAINS || '')
+    .split(',')
+    .map((d) => d.trim())
+    .filter(Boolean);
+  if (allowList.length) {
+    return allowList[Math.floor(Math.random() * allowList.length)];
+  }
+
+  const now = Date.now();
+  if (cachedDomains && now - cachedDomainsAt < DOMAIN_CACHE_MS && cachedDomains.length) {
+    return cachedDomains[Math.floor(Math.random() * cachedDomains.length)];
+  }
+
+  try {
+    const liveDomains = await fetchDomainList(env, baseUrl);
+    if (Array.isArray(liveDomains) && liveDomains.length) {
+      cachedDomains = liveDomains;
+      cachedDomainsAt = now;
+      return liveDomains[Math.floor(Math.random() * liveDomains.length)];
+    }
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        level: 'warn',
+        msg: 'temp-mail domain list fetch failed, falling back to defaults',
+        error: error.message,
+        code: error.code,
+      })
+    );
+  }
+
+  return DEFAULT_DOMAINS[Math.floor(Math.random() * DEFAULT_DOMAINS.length)];
 }
 
 function generateLogin() {
   const random = crypto.randomUUID().replace(/-/g, '');
   return `gp${random.slice(0, 12)}`;
+}
+
+async function fetchDomainList(env, baseUrl) {
+  const apiKey = env?.TEMP_MAIL_API_KEY;
+  const url = `${baseUrl}/?action=getDomainList`;
+  const headers = { Accept: 'application/json', 'User-Agent': 'good-pass-temp-mail/1.0' };
+  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+  const data = await fetchJson(url, headers);
+  if (!Array.isArray(data)) return DEFAULT_DOMAINS;
+  // Filter to simple domain tokens only to avoid injection from upstream.
+  return data.map((d) => String(d).trim()).filter((d) => /^[a-z0-9.-]+$/i.test(d));
 }
 
 async function fetchJson(url, headers) {

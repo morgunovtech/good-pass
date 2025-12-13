@@ -7,6 +7,9 @@ const originalFetch = global.fetch;
 describe('temp mail provider (1secmail defaults)', () => {
   beforeEach(() => {
     global.fetch = async (url) => {
+      if (String(url).includes('getDomainList')) {
+        return new Response(JSON.stringify(['1secmail.com', '1secmail.org']), { status: 200 });
+      }
       if (String(url).includes('getMessages')) {
         return new Response(
           JSON.stringify([
@@ -57,6 +60,11 @@ describe('temp mail provider (1secmail defaults)', () => {
     assert.equal(message.subject, 'Hello');
     assert.equal(message.textBody, 'Hi there');
     assert.equal(message.htmlBody.includes('Hi there'), true);
+  });
+
+  it('falls back to live domain list when allow list is absent', async () => {
+    const mailbox = await createMailbox({});
+    assert.ok(mailbox.address.endsWith('@1secmail.com') || mailbox.address.endsWith('@1secmail.org'));
   });
 });
 
