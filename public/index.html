@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Good Pass — проверка стойкости пароля</title>
+    <meta name="description" content="Проверьте стойкость пароля: оценка энтропии, время перебора, советы по улучшению." />
+    <meta property="og:title" content="Good Pass — проверка стойкости пароля" />
+    <meta property="og:description" content="Узнайте, сколько времени потребуется на взлом вашего пароля, и как сделать его надёжнее." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F512;</text></svg>" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
@@ -12,6 +17,7 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <a href="#password-input" class="skip-nav">Перейти к вводу пароля</a>
     <main class="layout" aria-labelledby="page-title">
       <section class="hero">
         <header>
@@ -28,9 +34,8 @@
               id="password-input"
               name="password"
               type="password"
-              minlength="1"
+              maxlength="128"
               placeholder="Например, Гроза-Моря#2045"
-              aria-live="polite"
               autocomplete="new-password"
               autofocus
             />
@@ -43,9 +48,14 @@
             >
               Показать
             </button>
-            <span class="input-underline" aria-hidden="true"></span>
           </div>
-          <p id="strength-label" class="strength-label">Введите пароль, чтобы начать.</p>
+          <div class="password-actions">
+            <p id="strength-label" class="strength-label" role="status" aria-live="polite">Введите пароль, чтобы начать.</p>
+            <div class="action-buttons">
+              <button type="button" class="btn-action" id="generate-password" aria-label="Сгенерировать стойкий пароль">Сгенерировать</button>
+              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" style="display:none">Копировать</button>
+            </div>
+          </div>
         </form>
       </section>
       <section class="analysis" aria-live="polite">
@@ -55,16 +65,16 @@
         <div class="stats">
           <div class="stat">
             <h2>Оценка стойкости</h2>
-            <p class="stat-value" id="score">—</p>
+            <p class="stat-value" id="score">&mdash;</p>
           </div>
           <div class="stat">
             <h2>Время перебора</h2>
-            <p class="stat-value" id="time">—</p>
+            <p class="stat-value" id="time">&mdash;</p>
             <p class="stat-sub">По модели брутфорса в 1 млрд попыток в секунду.</p>
           </div>
           <div class="stat">
             <h2>Энтропия</h2>
-            <p class="stat-value" id="entropy">—</p>
+            <p class="stat-value" id="entropy">&mdash;</p>
             <p class="stat-sub">Чем выше бит энтропии, тем сложнее подбор.</p>
           </div>
         </div>
@@ -83,7 +93,7 @@
         <article class="education-card">
           <h2>Что делает пароль хорошим?</h2>
           <ul>
-            <li>Длина 12–16 символов и больше.</li>
+            <li>Длина 12&ndash;16 символов и больше.</li>
             <li>Смешанный регистр, цифры и удобные спецсимволы.</li>
             <li>Фраза, которую легко представить, но сложно угадать.</li>
             <li>Уникальность для каждого сайта + менеджер паролей.</li>
@@ -92,7 +102,7 @@
         <article class="education-card">
           <h2>Что ослабляет пароль?</h2>
           <ul>
-            <li>Последовательности клавиш и шаблоны вроде «qwerty123».</li>
+            <li>Последовательности клавиш и шаблоны вроде &laquo;qwerty123&raquo;.</li>
             <li>Повторы одного символа или очевидные замены букв цифрами.</li>
             <li>Даты рождения, имена, любимые команды и прочие личные данные.</li>
             <li>Повторное использование одного пароля в разных сервисах.</li>
