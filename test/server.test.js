@@ -12,10 +12,7 @@ function request(path, options = {}) {
   return new Promise((resolve, reject) => {
     const req = http.request(url, {
       method: options.method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
+      headers: { 'Content-Type': 'application/json', ...options.headers }
     }, (res) => {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
@@ -47,7 +44,6 @@ describe('HTTP API', () => {
   });
 
   // --- Health check ---
-
   it('GET /healthz returns ok', async () => {
     const res = await request('/healthz');
     assert.equal(res.status, 200);
@@ -55,7 +51,6 @@ describe('HTTP API', () => {
   });
 
   // --- Security headers ---
-
   it('includes security headers', async () => {
     const res = await request('/healthz');
     assert.ok(res.headers['x-content-type-options']);
@@ -64,13 +59,17 @@ describe('HTTP API', () => {
     assert.ok(res.headers['referrer-policy']);
   });
 
+  it('CSP includes worker-src for service worker', async () => {
+    const res = await request('/healthz');
+    assert.ok(res.headers['content-security-policy'].includes('worker-src'));
+  });
+
   it('does not expose x-powered-by', async () => {
     const res = await request('/healthz');
     assert.equal(res.headers['x-powered-by'], undefined);
   });
 
   // --- POST /api/v1/analyze ---
-
   it('analyzes a valid password', async () => {
     const res = await request('/api/v1/analyze', {
       method: 'POST',
@@ -83,6 +82,36 @@ describe('HTTP API', () => {
     assert.ok(Array.isArray(res.body.strengths));
     assert.ok(Array.isArray(res.body.weaknesses));
     assert.equal(typeof res.body.estimatedSeconds, 'number');
+  });
+
+  it('response includes recommendations array', async () => {
+    const res = await request('/api/v1/analyze', {
+      method: 'POST',
+      body: { password: 'weak' }
+    });
+    assert.equal(res.status, 200);
+    assert.ok(Array.isArray(res.body.recommendations));
+  });
+
+  it('recommendations have tip, example, entropyGain', async () => {
+    const res = await request('/api/v1/analyze', {
+      method: 'POST',
+      body: { password: 'hello' }
+    });
+    if (res.body.recommendations.length > 0) {
+      const rec = res.body.recommendations[0];
+      assert.ok(rec.tip);
+      assert.ok(rec.example);
+      assert.equal(typeof rec.entropyGain, 'number');
+    }
+  });
+
+  it('strong password gets no recommendations', async () => {
+    const res = await request('/api/v1/analyze', {
+      method: 'POST',
+      body: { password: 'X$k9Lm!2qW@7nRtP-ZvBc3Fg8Jh' }
+    });
+    assert.equal(res.body.recommendations.length, 0);
   });
 
   it('returns 400 for non-string password', async () => {
@@ -110,6 +139,7 @@ describe('HTTP API', () => {
     assert.equal(res.status, 200);
     assert.equal(res.body.scoreLabel, 'Пусто');
     assert.equal(res.body.entropyBits, 0);
+    assert.ok(Array.isArray(res.body.recommendations));
   });
 
   it('rejects password longer than 128 characters', async () => {
@@ -121,8 +151,32 @@ describe('HTTP API', () => {
     assert.ok(res.body.error.includes('длинный'));
   });
 
-  // --- Legacy route redirect ---
+  // --- POST /api/v1/breach-check ---
+  it('rejects invalid hash prefix (too short)', async () => {
+    const res = await request('/api/v1/breach-check', {
+      method: 'POST',
+      body: { hashPrefix: 'AB' }
+    });
+    assert.equal(res.status, 400);
+  });
 
+  it('rejects invalid hash prefix (non-hex)', async () => {
+    const res = await request('/api/v1/breach-check', {
+      method: 'POST',
+      body: { hashPrefix: 'GHIJK' }
+    });
+    assert.equal(res.status, 400);
+  });
+
+  it('rejects missing hash prefix', async () => {
+    const res = await request('/api/v1/breach-check', {
+      method: 'POST',
+      body: {}
+    });
+    assert.equal(res.status, 400);
+  });
+
+  // --- Legacy route ---
   it('POST /api/analyze redirects to /api/v1/analyze', async () => {
     const url = new URL('/api/analyze', baseUrl);
     const body = JSON.stringify({ password: 'test123' });

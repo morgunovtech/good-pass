@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="auto">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,113 +9,234 @@
     <meta property="og:description" content="Узнайте, сколько времени потребуется на взлом вашего пароля, и как сделать его надёжнее." />
     <meta property="og:type" content="website" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F512;</text></svg>" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <a href="#password-input" class="skip-nav">Перейти к вводу пароля</a>
+
+    <!-- History sidebar -->
+    <aside id="history-sidebar" class="history-sidebar" aria-label="История проверок">
+      <div class="history-header">
+        <h2 data-i18n="history_title">История</h2>
+        <div class="history-actions">
+          <button class="btn-icon" id="btn-clear-history" aria-label="Очистить историю" data-i18n-label="history_clear">&#x2715;</button>
+          <button class="btn-icon" id="btn-toggle-history" aria-label="Закрыть">&#x2715;</button>
+        </div>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+    </aside>
+
     <main class="layout" aria-labelledby="page-title">
-      <section class="hero">
+      <!-- Main tabs -->
+      <nav class="main-tabs" aria-label="Режим работы">
+        <button class="main-tab active" data-main-tab="analyzer" data-i18n="tab_analyzer">Анализатор</button>
+        <button class="main-tab" data-main-tab="generator" data-i18n="tab_generator">Генератор</button>
+        <button class="btn-icon btn-history-toggle" id="btn-toggle-history-outer" aria-label="Открыть историю">&#x23F3;</button>
+      </nav>
+
+      <!-- ANALYZER PANEL -->
+      <section id="panel-analyzer" class="hero">
         <header>
-          <h1 id="page-title">Сделаем пароль по-настоящему стойким</h1>
-          <p>
-            Введите пароль и узнайте, сколько времени потребуется на его взлом, какие
-            привычки делают защиту крепче и как избежать типичных ошибок.
-          </p>
+          <h1 id="page-title" data-i18n="page_title">Сделаем пароль по-настоящему стойким</h1>
+          <p data-i18n="page_desc">Введите пароль и узнайте, сколько времени потребуется на его взлом, какие привычки делают защиту крепче и как избежать типичных ошибок.</p>
         </header>
-        <form class="password-form" aria-describedby="strength-label" autocomplete="off">
-          <label for="password-input">Ваш пароль</label>
+        <form class="password-form" autocomplete="off">
+          <label for="password-input" data-i18n="label_password">Ваш пароль</label>
           <div class="input-wrapper">
-            <input
-              id="password-input"
-              name="password"
-              type="password"
-              maxlength="128"
-              placeholder="Например, Гроза-Моря#2045"
-              autocomplete="new-password"
-              autofocus
-            />
-            <button
-              type="button"
-              class="toggle-visibility"
-              id="toggle-visibility"
-              aria-label="Показать пароль"
-              aria-pressed="false"
-            >
-              Показать
-            </button>
+            <input id="password-input" name="password" type="password" maxlength="128" placeholder="Например, Гроза-Моря#2045" data-i18n-placeholder="placeholder_password" autocomplete="new-password" autofocus />
+            <button type="button" class="toggle-visibility" id="toggle-visibility" aria-label="Показать пароль" aria-pressed="false" data-i18n="btn_show">Показать</button>
+            <div class="inline-strength-bar" id="inline-bar"></div>
           </div>
           <div class="password-actions">
-            <p id="strength-label" class="strength-label" role="status" aria-live="polite">Введите пароль, чтобы начать.</p>
+            <p id="strength-label" class="strength-label" role="status" aria-live="polite" data-i18n="status_empty">Введите пароль, чтобы начать.</p>
             <div class="action-buttons">
-              <button type="button" class="btn-action" id="generate-password" aria-label="Сгенерировать стойкий пароль">Сгенерировать</button>
-              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" style="display:none">Копировать</button>
+              <button type="button" class="btn-action" id="generate-password" data-i18n="btn_generate">Сгенерировать</button>
+              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" style="display:none" data-i18n="btn_copy">Копировать</button>
+              <button type="button" class="btn-action" id="btn-train" data-i18n="btn_train">Тренажёр</button>
+              <button type="button" class="btn-action" id="btn-export" data-i18n="btn_export">Экспорт PNG</button>
             </div>
+          </div>
+          <!-- Badges row -->
+          <div class="badges-row">
+            <span id="breach-badge" class="badge" style="display:none"></span>
+            <span id="nist-badge" class="badge" style="display:none"></span>
           </div>
         </form>
       </section>
+
+      <!-- ANALYSIS -->
       <section class="analysis" aria-live="polite">
         <div class="meter" role="img" aria-label="Индикатор стойкости">
           <div class="meter-fill" data-strength="0"></div>
         </div>
         <div class="stats">
           <div class="stat">
-            <h2>Оценка стойкости</h2>
+            <h2 data-i18n="stat_score">Оценка стойкости</h2>
             <p class="stat-value" id="score">&mdash;</p>
           </div>
           <div class="stat">
-            <h2>Время перебора</h2>
+            <h2 data-i18n="stat_time">Время перебора</h2>
             <p class="stat-value" id="time">&mdash;</p>
-            <p class="stat-sub">По модели брутфорса в 1 млрд попыток в секунду.</p>
+            <p class="stat-sub" data-i18n="stat_time_desc">По модели брутфорса в 1 млрд попыток в секунду.</p>
           </div>
           <div class="stat">
-            <h2>Энтропия</h2>
+            <h2 data-i18n="stat_entropy">Энтропия</h2>
             <p class="stat-value" id="entropy">&mdash;</p>
-            <p class="stat-sub">Чем выше бит энтропии, тем сложнее подбор.</p>
+            <p class="stat-sub" data-i18n="stat_entropy_desc">Чем выше бит энтропии, тем сложнее подбор.</p>
           </div>
         </div>
         <div class="lists">
           <article>
-            <h2>Что уже хорошо</h2>
+            <h2 data-i18n="list_strengths">Что уже хорошо</h2>
             <ul id="strengths" class="list"></ul>
           </article>
           <article>
-            <h2>Что стоит улучшить</h2>
+            <h2 data-i18n="list_weaknesses">Что стоит улучшить</h2>
             <ul id="weaknesses" class="list"></ul>
           </article>
         </div>
+        <!-- Recommendations -->
+        <div id="recommendations" class="recommendations" style="display:none">
+          <h2 data-i18n="recommendations_title">Попробуйте так</h2>
+          <div id="recommendations-list" class="recommendations-list"></div>
+        </div>
       </section>
+
+      <!-- GENERATOR PANEL -->
+      <section id="panel-generator" class="generator-panel" style="display:none">
+        <h2 data-i18n="tab_generator">Генератор</h2>
+        <div class="gen-tabs">
+          <button class="gen-tab active" data-gen-tab="random" data-i18n="gen_tab_random">Случайный</button>
+          <button class="gen-tab" data-gen-tab="passphrase" data-i18n="gen_tab_passphrase">Запоминаемый</button>
+        </div>
+
+        <!-- Random mode -->
+        <div id="gen-random" class="gen-mode">
+          <div class="gen-control">
+            <label data-i18n="gen_length">Длина</label>
+            <input type="range" id="gen-length" min="8" max="64" value="20" />
+            <span id="gen-length-value">20</span>
+          </div>
+          <div class="gen-toggles">
+            <label><input type="checkbox" id="gen-upper" checked /> <span data-i18n="gen_upper">Заглавные A&ndash;Z</span></label>
+            <label><input type="checkbox" id="gen-lower" checked /> <span data-i18n="gen_lower">Строчные a&ndash;z</span></label>
+            <label><input type="checkbox" id="gen-digits" checked /> <span data-i18n="gen_digits">Цифры 0&ndash;9</span></label>
+            <label><input type="checkbox" id="gen-symbols" checked /> <span data-i18n="gen_symbols">Символы !@#$</span></label>
+          </div>
+        </div>
+
+        <!-- Passphrase mode -->
+        <div id="gen-passphrase" class="gen-mode" style="display:none">
+          <div class="gen-control">
+            <label data-i18n="gen_words">Количество слов</label>
+            <input type="range" id="gen-words" min="3" max="6" value="4" />
+            <span id="gen-words-value">4</span>
+          </div>
+          <div class="gen-control">
+            <label data-i18n="gen_separator">Разделитель</label>
+            <select id="gen-separator">
+              <option value="hyphen" data-i18n="sep_hyphen">Дефис (-)</option>
+              <option value="dot" data-i18n="sep_dot">Точка (.)</option>
+              <option value="underscore" data-i18n="sep_underscore">Подчёркивание (_)</option>
+              <option value="space" data-i18n="sep_space">Пробел</option>
+            </select>
+          </div>
+          <div class="gen-control">
+            <label data-i18n="gen_theme">Тема словаря</label>
+            <select id="gen-theme">
+              <option value="default">Универсальный</option>
+              <option value="nature">Природа</option>
+              <option value="space">Космос</option>
+              <option value="food">Еда</option>
+              <option value="animals">Животные</option>
+              <option value="mythology">Мифология</option>
+            </select>
+          </div>
+          <div class="gen-toggles">
+            <label><input type="checkbox" id="gen-capitalize" checked /> <span data-i18n="gen_capitalize">Заглавные буквы</span></label>
+            <label><input type="checkbox" id="gen-numbers" checked /> <span data-i18n="gen_numbers">Числа между словами</span></label>
+          </div>
+        </div>
+
+        <p id="mnemonic-tip" class="mnemonic-tip" style="display:none"></p>
+
+        <div class="gen-actions">
+          <button class="btn-primary" id="btn-generate" data-i18n="btn_generate">Сгенерировать</button>
+          <button class="btn-action" id="btn-regenerate" data-i18n="btn_regenerate">Ещё раз</button>
+          <button class="btn-action" id="btn-batch" data-i18n="btn_batch">Ещё 5 паролей</button>
+        </div>
+        <ul id="batch-results" class="batch-results" style="display:none"></ul>
+      </section>
+
+      <!-- FAQ -->
+      <section class="faq" aria-label="FAQ">
+        <h2 data-i18n="faq_title">Частые вопросы</h2>
+        <details class="faq-item"><summary data-i18n="faq_q1">Что такое энтропия пароля?</summary><p data-i18n="faq_a1">Энтропия — это мера непредсказуемости пароля в битах. Чем больше бит, тем больше вариантов нужно перебрать злоумышленнику. Пароль с энтропией 80 бит потребует 2^80 попыток — это около квинтиллиона комбинаций.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q2">Как работает брутфорс?</summary><p data-i18n="faq_a2">Брутфорс — это метод перебора всех возможных комбинаций символов. Современные GPU могут проверять миллиарды хешей в секунду. Наш сервис моделирует атаку со скоростью 1 млрд попыток/сек.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q3">Что такое словарная атака?</summary><p data-i18n="faq_a3">Словарная атака использует списки распространённых паролей из реальных утечек. Базы вроде RockYou содержат миллионы паролей. Если ваш пароль есть в такой базе — он будет взломан за секунды.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q4">Зачем нужен менеджер паролей?</summary><p data-i18n="faq_a4">Менеджер паролей генерирует и хранит уникальные сложные пароли для каждого сервиса. Вам нужно помнить только один мастер-пароль. Это решает проблему повторного использования паролей.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q5">Что такое двухфакторная аутентификация (2FA)?</summary><p data-i18n="faq_a5">2FA добавляет второй уровень защиты: помимо пароля нужно подтвердить вход кодом из SMS, приложения (TOTP) или физического ключа (FIDO2). Даже если пароль украден, аккаунт останется защищённым.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q6">Что такое passkeys?</summary><p data-i18n="faq_a6">Passkeys — это современная замена паролей на основе криптографии с открытым ключом (FIDO2/WebAuthn). Вход происходит через биометрию или PIN устройства. Passkeys не могут быть украдены фишингом.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q7">Что рекомендует стандарт NIST SP 800-63B?</summary><p data-i18n="faq_a7">NIST рекомендует: минимум 8 символов (лучше 15+), проверку по спискам утечек, запрет последовательностей и повторов, НЕ требовать обязательную смену паролей без причины.</p></details>
+        <details class="faq-item"><summary data-i18n="faq_q8">Что такое rainbow tables?</summary><p data-i18n="faq_a8">Rainbow tables — это предвычисленные таблицы хешей для быстрого обратного поиска пароля по хешу. Защита: использование «salt» (случайной добавки) при хешировании делает rainbow tables бесполезными.</p></details>
+      </section>
+
+      <!-- Education -->
       <section class="education" aria-label="Объяснение критериев стойкости">
         <article class="education-card">
-          <h2>Что делает пароль хорошим?</h2>
+          <h2 data-i18n="edu_good_title">Что делает пароль хорошим?</h2>
           <ul>
-            <li>Длина 12&ndash;16 символов и больше.</li>
-            <li>Смешанный регистр, цифры и удобные спецсимволы.</li>
-            <li>Фраза, которую легко представить, но сложно угадать.</li>
-            <li>Уникальность для каждого сайта + менеджер паролей.</li>
+            <li data-i18n="edu_good_1">Длина 12&ndash;16 символов и больше.</li>
+            <li data-i18n="edu_good_2">Смешанный регистр, цифры и удобные спецсимволы.</li>
+            <li data-i18n="edu_good_3">Фраза, которую легко представить, но сложно угадать.</li>
+            <li data-i18n="edu_good_4">Уникальность для каждого сайта + менеджер паролей.</li>
           </ul>
         </article>
         <article class="education-card">
-          <h2>Что ослабляет пароль?</h2>
+          <h2 data-i18n="edu_bad_title">Что ослабляет пароль?</h2>
           <ul>
-            <li>Последовательности клавиш и шаблоны вроде &laquo;qwerty123&raquo;.</li>
-            <li>Повторы одного символа или очевидные замены букв цифрами.</li>
-            <li>Даты рождения, имена, любимые команды и прочие личные данные.</li>
-            <li>Повторное использование одного пароля в разных сервисах.</li>
+            <li data-i18n="edu_bad_1">Последовательности клавиш и шаблоны вроде &laquo;qwerty123&raquo;.</li>
+            <li data-i18n="edu_bad_2">Повторы одного символа или очевидные замены букв цифрами.</li>
+            <li data-i18n="edu_bad_3">Даты рождения, имена, любимые команды и прочие личные данные.</li>
+            <li data-i18n="edu_bad_4">Повторное использование одного пароля в разных сервисах.</li>
           </ul>
         </article>
       </section>
     </main>
+
     <footer class="footer">
-      <p>
-        Запоминайте пароли фразами, добавляйте редкие символы и используйте менеджер
-        паролей — так вы сохраняете и удобство, и защиту.
-      </p>
+      <p data-i18n="footer_text">Запоминайте пароли фразами, добавляйте редкие символы и используйте менеджер паролей — так вы сохраняете и удобство, и защиту.</p>
+      <div class="footer-controls">
+        <button class="btn-icon" id="btn-theme" aria-label="Переключить тему">Авто</button>
+        <button class="btn-icon" id="btn-lang" aria-label="Сменить язык">EN</button>
+        <a href="https://github.com/morgunovtech/good-pass" class="btn-icon footer-link" target="_blank" rel="noopener" data-i18n="footer_opensource">Открытый код</a>
+      </div>
     </footer>
+
+    <!-- Trainer modal -->
+    <div id="trainer-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 data-i18n="trainer_title">Тренажёр запоминания</h2>
+          <button class="btn-icon" id="trainer-close" aria-label="Закрыть">&times;</button>
+        </div>
+        <p class="trainer-display" id="trainer-display"></p>
+        <div id="trainer-chars" class="trainer-chars"></div>
+        <input type="text" id="trainer-input" class="trainer-input" placeholder="Введите пароль по памяти" autocomplete="off" />
+        <p id="trainer-result" class="trainer-result"></p>
+        <button class="btn-action" id="trainer-reveal" data-i18n="trainer_reveal">Показать ответ</button>
+      </div>
+    </div>
+
     <script type="module" src="/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    </script>
   </body>
 </html>
