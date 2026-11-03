@@ -2,7 +2,35 @@ export function initExport() {
   document.getElementById('btn-export')?.addEventListener('click', exportPNG);
 }
 
+// The PNG follows the page: colours are the design-system tokens of the
+// current theme (tokens.css + the strength scale in styles.css), fonts are
+// IBM Plex. DS rules apply here too: no rounded corners, no gradients,
+// weights up to 600.
+function palette() {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  return {
+    paper: v('--v4-paper', '#f5f2ed'),
+    fg: v('--v4-fg', '#14110d'),
+    muted: v('--v4-muted', '#5a554c'),
+    dim: v('--v4-dim', '#6c6759'),
+    line: v('--v4-line', '#c9c5bd'),
+    accent: v('--v4-orange', '#d9531e'),
+    strength: [0, 1, 2, 3, 4].map((i) => v(`--strength-${i}`, '#5a554c')),
+    sans: v('--v4-sans', 'system-ui, sans-serif'),
+    mono: v('--v4-mono', 'ui-monospace, monospace')
+  };
+}
+
 async function exportPNG() {
+  const p = palette();
+  // Canvas only uses webfonts that are already loaded.
+  await Promise.all([
+    document.fonts.load(`500 28px ${p.sans}`),
+    document.fonts.load(`400 16px ${p.sans}`),
+    document.fonts.load(`500 11px ${p.mono}`)
+  ]).catch(() => {});
+
   const canvas = document.createElement('canvas');
   const w = 800;
   const h = 500;
@@ -10,18 +38,19 @@ async function exportPNG() {
   canvas.height = h;
   const ctx = canvas.getContext('2d');
 
-  // Background.
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#0f172a');
-  grad.addColorStop(1, '#1e293b');
-  ctx.fillStyle = grad;
-  roundRect(ctx, 0, 0, w, h, 24);
-  ctx.fill();
+  // Background and frame.
+  ctx.fillStyle = p.paper;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = p.line;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  ctx.fillStyle = p.accent;
+  ctx.fillRect(0, 0, w, 4);
 
   // Title.
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 28px Inter, system-ui, sans-serif';
-  ctx.fillText('Good Pass — Анализ пароля', 40, 60);
+  ctx.fillStyle = p.fg;
+  ctx.font = `500 28px ${p.sans}`;
+  ctx.fillText('Good Pass — анализ пароля', 40, 64);
 
   // Gather data from DOM.
   const score = document.getElementById('score')?.textContent || '—';
@@ -30,54 +59,44 @@ async function exportPNG() {
   const nist = document.getElementById('nist-badge')?.textContent || '';
   const breach = document.getElementById('breach-badge')?.textContent || '';
 
-  // Score badge.
-  const scoreColor = getScoreColor(score);
+  // Score: outlined badge in the strength colour, like .badge on the page.
+  const scoreColor = p.strength[scoreLevel(score)];
+  ctx.strokeStyle = scoreColor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(41, 91, 238, 58);
   ctx.fillStyle = scoreColor;
-  roundRect(ctx, 40, 90, 200, 60, 12);
-  ctx.fill();
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 22px Inter, system-ui, sans-serif';
-  ctx.fillText(score, 60, 130);
+  ctx.font = `500 22px ${p.sans}`;
+  ctx.fillText(score, 60, 128);
 
   // Stats.
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '16px Inter, system-ui, sans-serif';
+  ctx.fillStyle = p.muted;
+  ctx.font = `400 16px ${p.sans}`;
   ctx.fillText(`Время перебора: ${time}`, 40, 190);
   ctx.fillText(`Энтропия: ${entropy}`, 40, 220);
+  if (nist) ctx.fillText(`NIST: ${nist}`, 40, 250);
+  if (breach) ctx.fillText(`Утечки: ${breach}`, 40, 280);
 
-  if (nist) {
-    ctx.fillText(`NIST: ${nist}`, 40, 250);
-  }
-  if (breach) {
-    ctx.fillText(`Утечки: ${breach}`, 40, 280);
-  }
-
-  // Strengths.
+  // Strengths and weaknesses under DS micro-labels.
   const strengths = [...document.querySelectorAll('#strengths li')].map((li) => li.textContent);
   const weaknesses = [...document.querySelectorAll('#weaknesses li')].map((li) => li.textContent);
+  const label = (text, x, color) => {
+    ctx.fillStyle = color;
+    ctx.font = `500 11px ${p.mono}`;
+    ctx.fillText(spaced(text.toUpperCase()), x, 330);
+  };
+  label('Сильные стороны', 40, p.strength[3]);
+  label('Слабые стороны', 420, p.strength[1]);
+  ctx.fillStyle = p.fg;
+  ctx.font = `400 14px ${p.sans}`;
+  strengths.slice(0, 3).forEach((s, i) => ctx.fillText(`+ ${truncate(s, 40)}`, 40, 357 + i * 22));
+  weaknesses.slice(0, 3).forEach((s, i) => ctx.fillText(`− ${truncate(s, 40)}`, 420, 357 + i * 22));
 
-  ctx.fillStyle = '#4ade80';
-  ctx.font = 'bold 16px Inter, system-ui, sans-serif';
-  ctx.fillText('Сильные стороны:', 40, 330);
-  ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillStyle = '#e2e8f0';
-  strengths.slice(0, 3).forEach((s, i) => {
-    ctx.fillText(`+ ${s}`, 40, 355 + i * 22);
-  });
-
-  ctx.fillStyle = '#f97316';
-  ctx.font = 'bold 16px Inter, system-ui, sans-serif';
-  ctx.fillText('Слабые стороны:', 420, 330);
-  ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillStyle = '#e2e8f0';
-  weaknesses.slice(0, 3).forEach((s, i) => {
-    ctx.fillText(`- ${truncate(s, 40)}`, 420, 355 + i * 22);
-  });
-
-  // Watermark.
-  ctx.fillStyle = 'rgba(148, 163, 184, 0.3)';
-  ctx.font = '12px Inter, system-ui, sans-serif';
-  ctx.fillText('goodpass.app | Open Source', 40, h - 20);
+  // Footer: the real address of the page.
+  ctx.fillStyle = p.line;
+  ctx.fillRect(40, h - 44, w - 80, 1);
+  ctx.fillStyle = p.dim;
+  ctx.font = `400 11px ${p.mono}`;
+  ctx.fillText(location.host || 'good-pass.pages.dev', 40, h - 22);
 
   // Download.
   canvas.toBlob((blob) => {
@@ -91,28 +110,21 @@ async function exportPNG() {
   }, 'image/png');
 }
 
-function getScoreColor(score) {
-  if (score.includes('Отличный')) return '#38bdf8';
-  if (score.includes('Сильный')) return '#4ade80';
-  if (score.includes('Средний')) return '#facc15';
-  if (score.includes('Слабый')) return '#f97316';
-  return '#f87171';
+// Same scale as the meter: 0 very weak … 4 excellent.
+function scoreLevel(score) {
+  if (score.includes('Отличный')) return 4;
+  if (score.includes('Сильный')) return 3;
+  if (score.includes('Средний')) return 2;
+  if (score.includes('Слабый')) return 1;
+  return 0;
 }
 
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.lineTo(x + r, y + h);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.lineTo(x, y + r);
-  ctx.arcTo(x, y, x + r, y, r);
-  ctx.closePath();
+// Canvas has no letter-spacing everywhere; thin spaces approximate the
+// DS micro-label tracking (0.1em).
+function spaced(text) {
+  return text.split('').join(' ');
 }
 
 function truncate(str, max) {
-  return str.length > max ? str.slice(0, max - 1) + '\u2026' : str;
+  return str.length > max ? str.slice(0, max - 1) + '…' : str;
 }
