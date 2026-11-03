@@ -45,7 +45,7 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'interest-cohort=()');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; font-src https://fonts.gstatic.com; style-src 'self' https://fonts.googleapis.com; img-src 'self' data: blob:; script-src 'self'; connect-src 'self'; worker-src 'self'"
+    "default-src 'self'; font-src https://s.morgunov.tech; style-src 'self' https://s.morgunov.tech; img-src 'self' data: blob:; script-src 'self'; connect-src 'self'; worker-src 'self'"
   );
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
