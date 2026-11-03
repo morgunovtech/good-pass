@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test · audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # High and critical advisories in runtime dependencies fail the build —
+      # a Dependabot bump is the fix.
+      - run: npm audit --omit=dev --audit-level=high
