@@ -59,15 +59,15 @@
             <p id="strength-label" class="strength-label" role="status" aria-live="polite" data-i18n="status_empty">Введите пароль, чтобы начать.</p>
             <div class="action-buttons">
               <button type="button" class="btn-action" id="generate-password" data-i18n="btn_generate">Сгенерировать</button>
-              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" style="display:none" data-i18n="btn_copy">Копировать</button>
+              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" hidden data-i18n="btn_copy">Копировать</button>
               <button type="button" class="btn-action" id="btn-train" data-i18n="btn_train">Тренажёр</button>
               <button type="button" class="btn-action" id="btn-export" data-i18n="btn_export">Экспорт PNG</button>
             </div>
           </div>
           <!-- Badges row -->
           <div class="badges-row">
-            <span id="breach-badge" class="badge" style="display:none"></span>
-            <span id="nist-badge" class="badge" style="display:none"></span>
+            <span id="breach-badge" class="badge" hidden></span>
+            <span id="nist-badge" class="badge" hidden></span>
           </div>
         </form>
       </section>
@@ -104,14 +104,14 @@
           </article>
         </div>
         <!-- Recommendations -->
-        <div id="recommendations" class="recommendations" style="display:none">
+        <div id="recommendations" class="recommendations" hidden>
           <h2 data-i18n="recommendations_title">Попробуйте так</h2>
           <div id="recommendations-list" class="recommendations-list"></div>
         </div>
       </section>
 
       <!-- GENERATOR PANEL -->
-      <section id="panel-generator" class="generator-panel" style="display:none">
+      <section id="panel-generator" class="generator-panel" hidden>
         <h2 data-i18n="tab_generator">Генератор</h2>
         <div class="gen-tabs">
           <button class="gen-tab active" data-gen-tab="random" data-i18n="gen_tab_random">Случайный</button>
@@ -134,7 +134,7 @@
         </div>
 
         <!-- Passphrase mode -->
-        <div id="gen-passphrase" class="gen-mode" style="display:none">
+        <div id="gen-passphrase" class="gen-mode" hidden>
           <div class="gen-control">
             <label data-i18n="gen_words">Количество слов</label>
             <input type="range" id="gen-words" min="3" max="6" value="4" />
@@ -166,14 +166,14 @@
           </div>
         </div>
 
-        <p id="mnemonic-tip" class="mnemonic-tip" style="display:none"></p>
+        <p id="mnemonic-tip" class="mnemonic-tip" hidden></p>
 
         <div class="gen-actions">
           <button class="btn-primary" id="btn-generate" data-i18n="btn_generate">Сгенерировать</button>
           <button class="btn-action" id="btn-regenerate" data-i18n="btn_regenerate">Ещё раз</button>
           <button class="btn-action" id="btn-batch" data-i18n="btn_batch">Ещё 5 паролей</button>
         </div>
-        <ul id="batch-results" class="batch-results" style="display:none"></ul>
+        <ul id="batch-results" class="batch-results" hidden></ul>
       </section>
 
       <!-- FAQ -->
@@ -237,10 +237,6 @@
     </div>
 
     <script type="module" src="/app.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      }
-    </script>
+    <script src="/sw-register.js" defer></script>
   </body>
 </html>

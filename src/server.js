@@ -4,9 +4,8 @@ import { fileURLToPath } from 'url';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
-import { analyzePassword } from './passwordAnalyzer.js';
-import { generateRecommendations } from './recommendations.js';
-import { fetchBreachRange } from './breachCheck.js';
+import { handleAnalyze, handleBreachCheck } from './api.js';
+import { log } from './log.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +20,6 @@ const port = (() => {
   }
   return parsed;
 })();
-const serviceName = 'good-pass-service';
-const serviceVersion = '2025.03.27';
 
 app.disable('x-powered-by');
 app.use(compression());
@@ -69,64 +66,15 @@ app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// --- Password analysis ---
+// --- API: the same handlers serve the Pages Functions in production ---
 app.post('/api/v1/analyze', apiLimiter, (req, res) => {
-  try {
-    const { password } = req.body ?? {};
-
-    if (typeof password !== 'string') {
-      log('warn', 'invalid_input', { reason: 'non-string password' });
-      return res.status(400).json({ error: 'Пароль должен быть строкой.' });
-    }
-
-    if (password.length === 0) {
-      log('info', 'empty_password', {});
-      return res.status(200).json({
-        scoreLabel: 'Пусто',
-        entropyBits: 0,
-        estimatedTime: 'Мгновенно',
-        estimatedSeconds: 0,
-        strengths: [],
-        weaknesses: ['Введите хотя бы один символ.'],
-        recommendations: []
-      });
-    }
-
-    if ([...password].length > 128) {
-      return res.status(400).json({ error: 'Пароль слишком длинный. Максимум 128 символов.' });
-    }
-
-    const analysis = analyzePassword(password);
-    const recommendations = generateRecommendations(password, analysis);
-
-    log('info', 'password_analyzed', {
-      length: password.length,
-      entropy: analysis.entropyBits,
-      score: analysis.scoreLabel
-    });
-
-    return res.json({ ...analysis, recommendations });
-  } catch (err) {
-    log('error', 'analyze_error', { message: err?.message ?? 'unknown' });
-    return res.status(500).json({ error: 'Что-то пошло не так. Попробуйте снова позже.' });
-  }
+  const { status, body } = handleAnalyze(req.body);
+  res.status(status).json(body);
 });
 
-// --- Breach check (HIBP k-anonymity proxy) ---
 app.post('/api/v1/breach-check', apiLimiter, async (req, res) => {
-  try {
-    const { hashPrefix } = req.body ?? {};
-
-    if (typeof hashPrefix !== 'string' || !/^[0-9a-fA-F]{5}$/.test(hashPrefix)) {
-      return res.status(400).json({ error: 'hashPrefix must be exactly 5 hex characters.' });
-    }
-
-    const suffixes = await fetchBreachRange(hashPrefix);
-    return res.json({ suffixes });
-  } catch (err) {
-    log('error', 'breach_check_error', { message: err?.message ?? 'unknown' });
-    return res.json({ suffixes: [], error: 'Проверка утечек временно недоступна.' });
-  }
+  const { status, body } = await handleBreachCheck(req.body);
+  res.status(status).json(body);
 });
 
 // Legacy route redirect.
@@ -145,21 +93,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {
     log('info', 'server_started', { port });
   });
-}
-
-function log(level, message, context) {
-  const entry = {
-    ts: new Date().toISOString(),
-    level,
-    service: serviceName,
-    version: serviceVersion,
-    msg: message,
-    context
-  };
-  const output = JSON.stringify(entry);
-  if (level === 'error') {
-    console.error(output);
-  } else {
-    console.log(output);
-  }
 }
