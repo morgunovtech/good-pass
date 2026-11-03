@@ -22,8 +22,8 @@ export function initGenerator() {
       currentMode = btn.dataset.genTab;
       document.querySelectorAll('[data-gen-tab]').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('gen-random').style.display = currentMode === 'random' ? '' : 'none';
-      document.getElementById('gen-passphrase').style.display = currentMode === 'passphrase' ? '' : 'none';
+      document.getElementById('gen-random').hidden = currentMode !== 'random';
+      document.getElementById('gen-passphrase').hidden = currentMode !== 'passphrase';
     });
   });
 
@@ -165,7 +165,7 @@ function showMnemonic(words, sep) {
   });
 
   container.textContent = `Представьте: ${parts.join(', ')}.`;
-  container.style.display = '';
+  container.hidden = false;
 }
 
 function generateBatch() {
@@ -201,7 +201,7 @@ function generateBatch() {
     li.append(span, btn, useBtn);
     container.appendChild(li);
   }
-  container.style.display = '';
+  container.hidden = false;
 }
 
 function setPasswordAndAnalyze(password) {

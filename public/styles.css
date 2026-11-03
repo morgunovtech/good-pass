@@ -47,6 +47,10 @@
 
 * { box-sizing: border-box; }
 
+/* Elements are shown and hidden with the hidden attribute (inline styles are
+   blocked by the CSP); keep it winning over the display of .badge, .gen-mode… */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   min-height: 100vh;

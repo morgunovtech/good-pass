@@ -1,8 +1,9 @@
-const CACHE_NAME = 'goodpass-v3';
+const CACHE_NAME = 'goodpass-v4';
 const STATIC_ASSETS = [
   '/',
   '/styles.css',
   '/app.js',
+  '/sw-register.js',
   '/generator.js',
   '/wordlists.js',
   '/history.js',

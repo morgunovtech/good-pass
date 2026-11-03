@@ -44,8 +44,8 @@ document.querySelectorAll('[data-main-tab]').forEach((btn) => {
     const tab = btn.dataset.mainTab;
     document.querySelectorAll('[data-main-tab]').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('panel-analyzer').style.display = tab === 'analyzer' ? '' : 'none';
-    document.getElementById('panel-generator').style.display = tab === 'generator' ? '' : 'none';
+    document.getElementById('panel-analyzer').hidden = tab !== 'analyzer';
+    document.getElementById('panel-generator').hidden = tab !== 'generator';
   });
 });
 
@@ -87,7 +87,7 @@ input.addEventListener('input', (event) => {
   const password = event.target.value;
   strengthLabel.textContent = password ? 'Анализируем\u2026' : 'Введите пароль, чтобы начать.';
 
-  if (copyButton) copyButton.style.display = password ? '' : 'none';
+  if (copyButton) copyButton.hidden = !password;
 
   if (controller) controller.abort();
 
@@ -155,7 +155,7 @@ function renderResult(password, result) {
 function renderRecommendations(recs) {
   if (!recsContainer || !recsList) return;
   if (!recs || recs.length === 0) {
-    recsContainer.style.display = 'none';
+    recsContainer.hidden = true;
     return;
   }
 
@@ -190,7 +190,7 @@ function renderRecommendations(recs) {
     card.append(tip, example, gain, useBtn);
     recsList.appendChild(card);
   });
-  recsContainer.style.display = '';
+  recsContainer.hidden = false;
 }
 
 // --- Breach check via HIBP k-anonymity ---
@@ -198,7 +198,7 @@ async function checkBreach(password, analysis) {
   if (!breachBadge) return;
   breachBadge.textContent = 'Проверяем утечки\u2026';
   breachBadge.className = 'badge badge-checking';
-  breachBadge.style.display = '';
+  breachBadge.hidden = false;
 
   try {
     const encoder = new TextEncoder();
@@ -272,7 +272,7 @@ function updateNistBadge(analysis, breachCount) {
     nistBadge.className = 'badge badge-nist-fail';
     nistBadge.title = reasons.join('; ');
   }
-  nistBadge.style.display = '';
+  nistBadge.hidden = false;
 }
 
 // --- Inline color bar under input ---
@@ -337,10 +337,10 @@ function resetResults() {
   renderList(strengthsList, null, 'Введите пароль, чтобы увидеть сильные стороны.');
   renderList(weaknessesList, null, 'Печатайте пароль — здесь появятся подсказки.');
   if (analysisSection) analysisSection.classList.remove('visible');
-  if (copyButton) copyButton.style.display = 'none';
-  if (breachBadge) { breachBadge.style.display = 'none'; breachBadge.textContent = ''; }
-  if (nistBadge) { nistBadge.style.display = 'none'; nistBadge.textContent = ''; }
-  if (recsContainer) recsContainer.style.display = 'none';
+  if (copyButton) copyButton.hidden = true;
+  if (breachBadge) { breachBadge.hidden = true; breachBadge.textContent = ''; }
+  if (nistBadge) { nistBadge.hidden = true; nistBadge.textContent = ''; }
+  if (recsContainer) recsContainer.hidden = true;
   if (inlineBar) { inlineBar.style.opacity = '0'; inlineBar.style.width = '10%'; }
   lastAnalysis = null;
   lastBreachCount = null;

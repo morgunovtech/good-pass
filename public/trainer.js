@@ -21,7 +21,7 @@ function startTraining() {
   const chars = document.getElementById('trainer-chars');
 
   display.textContent = targetPassword;
-  display.style.display = '';
+  display.hidden = false;
   trainerInput.value = '';
   trainerInput.disabled = true;
   result.textContent = '';
@@ -30,7 +30,7 @@ function startTraining() {
 
   // Show password for 5 seconds, then hide.
   setTimeout(() => {
-    display.style.display = 'none';
+    display.hidden = true;
     trainerInput.disabled = false;
     trainerInput.focus();
     result.textContent = 'Введите пароль по памяти:';
@@ -81,7 +81,7 @@ function revealAnswer() {
   const display = document.getElementById('trainer-display');
   if (display) {
     display.textContent = targetPassword;
-    display.style.display = '';
+    display.hidden = false;
   }
 }
 
