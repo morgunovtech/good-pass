@@ -285,10 +285,10 @@ function updateInlineBar(password) {
   if (len >= 12 && /[A-Z]/i.test(password) && /\d/.test(password)) level = 3;
   if (len >= 16 && /[^A-Za-z0-9]/.test(password)) level = 4;
 
-  const colors = ['#f87171', '#f97316', '#facc15', '#4ade80', '#38bdf8'];
   const widths = ['10%', '25%', '50%', '75%', '100%'];
   inlineBar.style.width = widths[level];
-  inlineBar.style.backgroundColor = colors[level];
+  // --strength-0…4 live in styles.css, tuned for the light and dark themes.
+  inlineBar.style.backgroundColor = `var(--strength-${level})`;
   inlineBar.style.opacity = password ? '1' : '0';
 }
 
