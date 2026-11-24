@@ -57,7 +57,7 @@ CI runs the tests, `npm audit --omit=dev --audit-level=high` and a gitleaks secr
 
 Cloudflare Pages deploys `main` automatically: `public/` with the headers from `public/_headers`, and the Functions from `functions/`.
 
-The service worker caches the static files under one name (`goodpass-v6` in `public/sw.js`); bump it whenever CSS or JS change, or returning visitors keep the old files. The link preview `public/og-image.png` (1200×630) is rendered from `tools/og-card.html` with headless Chrome; the command is at the top of that file. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
+The service worker caches the static files under one name (`goodpass-v7` in `public/sw.js`); bump it whenever CSS or JS change, or returning visitors keep the old files. The link preview `public/og-image.png` (1200×630) is rendered from `tools/og-card.html` with headless Chrome; the command is at the top of that file. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
 
 ## What it creates outside the repo
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'goodpass-v6';
+const CACHE_NAME = 'goodpass-v7';
 const STATIC_ASSETS = [
   '/',
   '/styles.css',
@@ -35,6 +35,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Other origins — the design system's CSS and fonts on s.morgunov.tech — are
+  // left to the browser, which loads them under the page's CSP. The worker's
+  // own CSP (connect-src 'self', from _headers) blocks its fetch() to them, so
+  // answering them here left returning visitors without styles.
+  if (url.origin !== self.location.origin) return;
 
   // Network-first for API calls.
   if (url.pathname.startsWith('/api/')) {
