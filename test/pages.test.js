@@ -302,10 +302,10 @@ describe('Pages static files', () => {
     const groups = robots.split(/\n(?=User-agent:)/).filter((g) => g.startsWith('User-agent:'));
     assert.ok(groups.length >= 1);
     for (const group of groups) {
-      assert.match(group, /^Content-Signal: search=yes, ai-input=yes$/m, group.split('\n')[0]);
+      assert.match(group, /^Content-Signal: search=yes, ai-input=yes, ai-train=yes$/m, group.split('\n')[0]);
     }
-    // No ai-train signal in either direction: the owner has not decided it.
-    assert.doesNotMatch(robots, /ai-train/);
+    // One signal line per group: search, AI answers and AI training, by the owner's decision.
+    assert.equal((robots.match(/^Content-Signal:/gm) || []).length, groups.length);
   });
 
   it('llms.txt is served as text and links the site, the repository and the author', async () => {
