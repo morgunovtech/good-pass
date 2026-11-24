@@ -1,5 +1,6 @@
 # One grouped PR per week with every npm update, monthly PRs for the
-# Actions. CI checks them; nothing merges automatically.
+# Actions. CI checks them; minor and patch bumps merge on their own once CI
+# is green (workflows/dependabot-automerge.yml), majors wait for a human.
 version: 2
 updates:
   - package-ecosystem: npm
