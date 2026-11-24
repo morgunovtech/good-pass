@@ -1,6 +1,6 @@
 {
   "name": "good-pass",
-  "version": "2024.10.07",
+  "version": "1.2.0",
   "description": "Password strength educational web service",
   "type": "module",
   "scripts": {
