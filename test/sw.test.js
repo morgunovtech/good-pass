@@ -4,13 +4,13 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 // public/sw.js run in a sandbox that stands in for a service worker on
-// good-pass.pages.dev: the test sees which requests the worker answers.
+// good-pass.morgunov.tech: the test sees which requests the worker answers.
 async function loadWorker() {
   const handlers = {};
   const fetched = [];
   const sandbox = {
     self: {
-      location: { origin: 'https://good-pass.pages.dev' },
+      location: { origin: 'https://good-pass.morgunov.tech' },
       addEventListener: (type, handler) => { handlers[type] = handler; },
       skipWaiting() {},
       clients: { claim() {} }
@@ -55,7 +55,7 @@ describe('service worker (public/sw.js)', () => {
   it('answers its own static files and API calls', async () => {
     const { handlers, fetched } = await loadWorker();
     for (const path of ['/', '/app.js', '/locales/en.json', '/api/v1/analyze']) {
-      const event = fetchEvent(`https://good-pass.pages.dev${path}`);
+      const event = fetchEvent(`https://good-pass.morgunov.tech${path}`);
       handlers.fetch(event);
       assert.equal(event.responses.length, 1, path);
       assert.equal(await (await event.responses[0]).text(), 'ok');

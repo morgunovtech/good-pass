@@ -100,7 +100,7 @@ async function exportPNG() {
   ctx.fillRect(40, h - 44, w - 80, 1);
   ctx.fillStyle = p.dim;
   ctx.font = `400 11px ${p.mono}`;
-  ctx.fillText(location.host || 'good-pass.pages.dev', 40, h - 22);
+  ctx.fillText(location.host || 'good-pass.morgunov.tech', 40, h - 22);
 
   // Download.
   canvas.toBlob((blob) => {

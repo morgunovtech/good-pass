@@ -2,6 +2,15 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.3.2 — 2026-11-24
+
+Good Pass is published at https://good-pass.morgunov.tech.
+
+**Address**
+- The canonical link, `og:url`, `og:image`, `sitemap.xml` and the `Sitemap:` line in `robots.txt` name https://good-pass.morgunov.tech instead of good-pass.pages.dev, and the link preview `og-image.png` prints it; the PNG export falls back to it when the page has no host. Service worker cache `goodpass-v8` (#21).
+- good-pass.pages.dev stays up as Cloudflare's technical host of the project, but `_headers` now sends `X-Robots-Tag: noindex` there, so search engines index the published address only; `test/pages.test.js` keeps the rule. gpass.morgunov.tech redirects to good-pass.morgunov.tech with a Cloudflare rule outside the repo (#21).
+- README: the published address, an API example on it, the custom domains and their DNS records in «What it creates outside the repo» (#21).
+
 ## 1.3.1 — 2026-11-24
 
 Returning visitors get the page's styles again.

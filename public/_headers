@@ -11,3 +11,10 @@
 
 /404.html
   X-Robots-Tag: noindex
+
+# good-pass.pages.dev is Cloudflare's technical host for the project; the
+# published address is https://good-pass.morgunov.tech, so search engines are
+# told not to index the technical one. Preview deployments
+# (<hash>.good-pass.pages.dev) already get noindex from Cloudflare.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
