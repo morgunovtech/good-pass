@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 
-import { pickLang } from '../public/i18n.js';
+import { pickLang, pathForLang } from '../public/i18n.js';
 import { WORDLISTS, MNEMONIC_ACTIONS } from '../public/wordlists.js';
 import ruApi from '../src/i18n/ru.js';
 import enApi from '../src/i18n/en.js';
@@ -47,6 +47,21 @@ describe('interface language pick (public/i18n.js)', () => {
 
   it('an unknown saved value falls through to the browser language', () => {
     assert.equal(pickLang('fr', 'en-US'), 'en');
+  });
+
+  it('/en/ is English whatever was saved', () => {
+    assert.equal(pickLang('ru', 'ru-RU', '/en/'), 'en');
+    assert.equal(pickLang('ru', 'ru-RU', '/en'), 'en');
+    assert.equal(pickLang('ru', 'en-US', '/'), 'ru');
+    assert.equal(pickLang(null, 'ru-RU', '/english/'), 'ru');
+  });
+
+  it('a switch moves the address between / and /en/ only', () => {
+    assert.equal(pathForLang('/en/', 'ru'), '/');
+    assert.equal(pathForLang('/', 'en'), '/en/');
+    assert.equal(pathForLang('/en/', 'en'), null);
+    assert.equal(pathForLang('/', 'ru'), null);
+    assert.equal(pathForLang('/index.html', 'en'), null);
   });
 });
 

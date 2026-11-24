@@ -2,7 +2,7 @@
 
 A small educational web app that shows how strong a password really is, how long it would take to crack, and what exactly to change to make it stronger.
 
-**Live:** https://good-pass.morgunov.tech · **License:** MIT · **Русская версия:** [README.ru.md](README.ru.md)
+**Live:** https://good-pass.morgunov.tech (in English: https://good-pass.morgunov.tech/en/) · **License:** MIT · **Русская версия:** [README.ru.md](README.ru.md)
 
 ## What it does
 
@@ -12,7 +12,7 @@ A small educational web app that shows how strong a password really is, how long
 - **Memory trainer.** Shows a password for five seconds, then checks how well you can type it from memory.
 - **History, PNG export, shortcuts.** Recent checks stay in your browser; a result can be saved as an image; keyboard shortcuts for the main actions.
 - **Works offline** as a PWA once loaded; light, dark and auto themes.
-- **Languages.** Russian and English, switched at the bottom of the page: the interface (`public/locales/`), the analysis the API returns — score, crack time, strengths, weaknesses, recommendations, error messages (`src/i18n/`) — and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian.
+- **Languages.** Russian and English, switched at the bottom of the page: the interface (`public/locales/`), the analysis the API returns — score, crack time, strengths, weaknesses, recommendations, error messages (`src/i18n/`) — and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian; https://good-pass.morgunov.tech/en/ always starts in English, and switching the language there moves the address to `/` (and back to `/en/` for English).
 
 ## Privacy
 
@@ -38,7 +38,7 @@ curl -s -X POST -H 'content-type: application/json' \
 
 ## Tech stack
 
-Static front end in `public/` (vanilla JS modules, the [morgunov.tech design system](https://s.morgunov.tech) for styles and fonts, a service worker for offline use). The API lives in `functions/api/v1/` as Cloudflare Pages Functions; locally the same logic (`src/api.js`) is served by Express. The API's texts are one dictionary per language in `src/i18n/`. Tests use the built-in `node:test`.
+Static front end in `public/` (vanilla JS modules, the [morgunov.tech design system](https://s.morgunov.tech) for styles and fonts, a service worker for offline use). The API lives in `functions/api/v1/` as Cloudflare Pages Functions; locally the same logic (`src/api.js`) is served by Express. `/en/` is the same page with English link-preview tags: LinkedIn, Telegram and other link previews read the `og:` tags without running the page, so `src/englishPage.js` rewrites the `<head>` of `public/index.html` in English (title, description, canonical, `og:url`, image, `og:locale`), served by the Pages Function in `functions/en/` and by Express locally. The API's texts are one dictionary per language in `src/i18n/`. Tests use the built-in `node:test`.
 
 For search engines and AI assistants: the page carries a JSON-LD `WebApplication` block (author: the same `Person` as on s.morgunov.tech) and the Yandex Webmaster verification meta; `public/robots.txt` lets every crawler in and gives the Content Signals `search=yes, ai-input=yes` ([contentsignals.org](https://contentsignals.org); no `ai-train` signal either way); `public/llms.txt` describes the service, its privacy and the API in plain text.
 
@@ -57,15 +57,15 @@ npx wrangler@4 pages dev public    # the production setup: Pages Functions and _
 npm test
 ```
 
-The suite covers the analyzer and the recommendations, the breach-check parsing, the HTTP API through Express, and the production setup (`test/pages.test.js`): the Pages Functions answer exactly like Express in both languages, only the 5-character prefix reaches HIBP, HIBP being down comes back as `200` with an `error`, `public/_headers` sends the same CSP as the server and `noindex` on the pages.dev host, and the HTML has nothing inline that the CSP would block (the JSON-LD block is data, which the browser never runs); `robots.txt` gives every group the content signals, `llms.txt` is served as text, the JSON-LD parses and names the canonical address. `test/i18n.test.js` checks the languages: the page's language pick, the same keys in every dictionary, no Cyrillic left in English, the word lists.
+The suite covers the analyzer and the recommendations, the breach-check parsing, the HTTP API through Express, and the production setup (`test/pages.test.js`): the Pages Functions answer exactly like Express in both languages, only the 5-character prefix reaches HIBP, HIBP being down comes back as `200` with an `error`, `public/_headers` sends the same CSP as the server and `noindex` on the pages.dev host, and the HTML has nothing inline that the CSP would block (the JSON-LD block is data, which the browser never runs); `robots.txt` gives every group the content signals, `llms.txt` is served as text, the JSON-LD parses and names the canonical address; `/en/` finds every tag it rewrites, leaves no Russian in them, keeps the static headers, answers the same through the Function and Express, and points at a 1200×630 English PNG. `test/i18n.test.js` checks the languages: the page's language pick (`/en/` included), the same keys in every dictionary, no Cyrillic left in English, the word lists.
 
 CI runs the tests, `npm audit --omit=dev --audit-level=high` and a gitleaks secret scan on every pull request; `main` requires both checks to pass. Dependabot opens one grouped npm PR a week; minor and patch bumps merge on their own once CI is green, majors wait for a human.
 
 ## Deploy
 
-Cloudflare Pages deploys `main` to https://good-pass.morgunov.tech automatically: `public/` with the headers from `public/_headers`, and the Functions from `functions/`.
+Cloudflare Pages deploys `main` to https://good-pass.morgunov.tech automatically: `public/` with the headers from `public/_headers`, and the Functions from `functions/` (the API and `/en/`).
 
-The service worker caches the static files under one name (`goodpass-v9` in `public/sw.js`); bump it whenever the page, CSS or JS change, or returning visitors keep the old files. The link preview `public/og-image.png` (1200×630) is rendered from `tools/og-card.html` with headless Chrome; the command is at the top of that file. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
+The service worker caches the static files under one name (`goodpass-v10` in `public/sw.js`); bump it whenever the page, CSS or JS change, or returning visitors keep the old files. The link previews, 1200×630 PNGs, are rendered from `tools/og-card.html` with headless Chrome (the command is at the top of that file): `public/og-image.png`, Russian and English, for `/`, and `public/og-image-en.png`, English only, for `/en/`. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
 
 ## What it creates outside the repo
 

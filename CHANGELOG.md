@@ -2,6 +2,20 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.4.0 — 2026-11-24
+
+An English address for links shared on LinkedIn and elsewhere: https://good-pass.morgunov.tech/en/. The analysis, the API and what leaves the browser do not change.
+
+**English page**
+- `/en/` is the same page with English link-preview tags. LinkedIn, Telegram and other link previews read the `og:` tags without running the page, and `index.html` carries the Russian ones, so `src/englishPage.js` rewrites its `<head>`: `lang`, title, description, canonical address, `og:title`, `og:description`, `og:url`, `og:image`, `og:image:alt` and `og:locale`. The Pages Function `functions/en/index.js` serves it in production from the static page, whose `_headers` (the CSP among them) come along; `src/server.js` serves the same locally. `/en` redirects to `/en/`. The English description is the one the project uses elsewhere: "Explains password strength: entropy, crack time, a k-anonymous breach check, a generator and a memory trainer."
+- On `/en/` the page starts in English whatever was saved, without changing the saved choice. Switching the language moves the address between `/` and `/en/`, so a copied link opens in the language on screen.
+- `public/og-image-en.png`, the English card of `/en/` (1200×630), rendered from `tools/og-card.html?lang=en`; `/` keeps `og-image.png`, Russian and English.
+- `index.html` links the two addresses with `hreflang` (`ru`, `en`, `x-default` → `/`) and gives `og:locale` and `og:image:type`; `sitemap.xml` and `llms.txt` list `/en/`.
+- Service worker cache `goodpass-v10`; it caches `/en/` too.
+
+**Tests**
+- `test/pages.test.js`: the Function finds every tag it rewrites in `index.html`, leaves no Russian in the tags of `/en/`, changes nothing but the `<head>`, keeps the static headers and drops the ETag, uses the title of `locales/en.json`, redirects `/en`, answers like Express, and names a 1200×630 English PNG; `index.html` has the `hreflang` links. `test/i18n.test.js`: the language pick on `/en/` and the address after a switch.
+
 ## 1.3.3 — 2026-11-24
 
 Search engines and AI assistants can find and cite Good Pass.

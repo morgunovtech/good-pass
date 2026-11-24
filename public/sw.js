@@ -1,6 +1,7 @@
-const CACHE_NAME = 'goodpass-v9';
+const CACHE_NAME = 'goodpass-v10';
 const STATIC_ASSETS = [
   '/',
+  '/en/',
   '/styles.css',
   '/app.js',
   '/sw-register.js',

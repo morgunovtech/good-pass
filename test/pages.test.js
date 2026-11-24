@@ -4,6 +4,8 @@ import { readFile, readdir } from 'node:fs/promises';
 
 import { onRequestPost as analyze } from '../functions/api/v1/analyze.js';
 import { onRequestPost as breachCheck } from '../functions/api/v1/breach-check.js';
+import { onRequest as englishPageFunction } from '../functions/en/index.js';
+import { englishPage, EN } from '../src/englishPage.js';
 import { clearCache } from '../src/breachCheck.js';
 import { app } from '../src/server.js';
 
@@ -149,6 +151,117 @@ describe('Pages Function: POST /api/v1/breach-check', () => {
   });
 });
 
+// A PNG of 1200×630 in public/: the size LinkedIn, Telegram and X show in full.
+async function assertPreviewPng(url) {
+  const prefix = 'https://good-pass.morgunov.tech/';
+  assert.ok(url.startsWith(prefix) && url.endsWith('.png'), url);
+  const png = await readFile(new URL(`../public/${url.slice(prefix.length)}`, import.meta.url));
+  assert.equal(png.toString('ascii', 1, 4), 'PNG', url);
+  assert.equal(png.readUInt32BE(16), 1200, url);
+  assert.equal(png.readUInt32BE(20), 630, url);
+}
+
+const meta = (html, key) => {
+  const found = html.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)" />`));
+  assert.ok(found, key);
+  return found[1];
+};
+
+describe('Pages Function: GET /en/', () => {
+  const CSP = "default-src 'self'";
+  let indexHtml;
+  let assetsAsked;
+  const env = {
+    ASSETS: {
+      fetch: async (url) => {
+        assetsAsked.push(String(url));
+        return new Response(indexHtml, {
+          headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP, ETag: '"index"' }
+        });
+      }
+    }
+  };
+  const call = (path, method = 'GET') => {
+    let nextCalled = false;
+    const next = async () => {
+      nextCalled = true;
+      return new Response('next');
+    };
+    const request = new Request(`https://good-pass.morgunov.tech${path}`, { method });
+    return englishPageFunction({ request, env, next }).then((res) => ({ res, nextCalled }));
+  };
+
+  before(async () => {
+    indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  });
+  beforeEach(() => {
+    assetsAsked = [];
+  });
+
+  it('finds every tag it rewrites in index.html', () => {
+    assert.deepEqual(englishPage(indexHtml).missing, []);
+  });
+
+  it('serves index.html with English link-preview tags and the static headers', async () => {
+    const { res } = await call('/en/');
+    assert.equal(res.status, 200);
+    assert.deepEqual(assetsAsked, ['https://good-pass.morgunov.tech/']);
+    assert.equal(res.headers.get('content-security-policy'), CSP);
+    assert.equal(res.headers.get('etag'), null, 'not the ETag of the Russian page');
+    const html = await res.text();
+    const head = html.slice(0, html.indexOf('</head>'));
+    assert.match(head, /<html lang="en" data-theme="auto">/);
+    assert.match(head, /<link rel="canonical" href="https:\/\/good-pass\.morgunov\.tech\/en\/" \/>/);
+    assert.equal(meta(head, 'og:url'), 'https://good-pass.morgunov.tech/en/');
+    assert.equal(meta(head, 'og:title'), EN.title);
+    assert.equal(meta(head, 'og:description'), EN.description);
+    assert.equal(meta(head, 'description'), EN.description);
+    assert.equal(meta(head, 'og:locale'), 'en_US');
+    assert.match(meta(head, 'og:image'), /\/og-image-en\.png$/);
+    await assertPreviewPng(meta(head, 'og:image'));
+    // Only the JSON-LD block and the page body may stay Russian on /en/.
+    const tags = head.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '').match(/<(meta|title)[^>]*>[^<]*/g);
+    for (const tag of tags) assert.doesNotMatch(tag, /[а-яё]/i, tag);
+    assert.equal(html.slice(head.length), indexHtml.slice(indexHtml.indexOf('</head>')), 'only the head changes');
+  });
+
+  it('uses the English title the page sets for itself', async () => {
+    const en = JSON.parse(await readFile(new URL('../public/locales/en.json', import.meta.url), 'utf8'));
+    assert.equal(EN.title, en.meta_title);
+  });
+
+  it('redirects /en to /en/, query included', async () => {
+    const { res } = await call('/en?ref=linkedin');
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.get('location'), 'https://good-pass.morgunov.tech/en/?ref=linkedin');
+  });
+
+  it('answers HEAD and leaves other methods to the next handler', async () => {
+    assert.equal((await call('/en/', 'HEAD')).res.status, 200);
+    const { res, nextCalled } = await call('/en/', 'POST');
+    assert.ok(nextCalled);
+    assert.equal(await res.text(), 'next');
+  });
+
+  it('the Express server serves /en/ the same way', async () => {
+    const server = app.listen(0);
+    try {
+      await new Promise((resolve) => server.once('listening', resolve));
+      const base = `http://localhost:${server.address().port}`;
+      const viaExpress = await fetch(`${base}/en/`);
+      assert.equal(viaExpress.status, 200);
+      assert.ok(viaExpress.headers.get('content-security-policy'));
+      const { res } = await call('/en/');
+      assert.equal(await viaExpress.text(), await res.text());
+      const redirect = await fetch(`${base}/en?ref=linkedin`, { redirect: 'manual' });
+      assert.equal(redirect.status, 301);
+      assert.equal(redirect.headers.get('location'), '/en/?ref=linkedin');
+    } finally {
+      server.close();
+    }
+  });
+});
+
 describe('Pages static files', () => {
   let server;
   let baseUrl;
@@ -237,6 +350,8 @@ describe('Pages static files', () => {
     assert.equal(png.toString('ascii', 1, 4), 'PNG');
     assert.equal(png.readUInt32BE(16), 1200);
     assert.equal(png.readUInt32BE(20), 630);
+    assert.match(html, /<link rel="alternate" hreflang="en" href="https:\/\/good-pass\.morgunov\.tech\/en\/" \/>/);
+    assert.match(html, /<link rel="alternate" hreflang="x-default" href="https:\/\/good-pass\.morgunov\.tech\/" \/>/);
   });
 
   it('every element the scripts look up by id is on the page', async () => {
