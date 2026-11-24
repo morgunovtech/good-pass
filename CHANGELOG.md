@@ -2,6 +2,31 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.3.0 — 2026-11-24
+
+The analysis speaks English: the API answers in the visitor's language, the generator works again and has English word lists, and the language picker keeps a saved Russian.
+
+**Fixed**
+- The language picker ignored a saved choice: `localStorage.getItem(…) || navigator.language?.startsWith('en') ? 'en' : 'ru'` reads as `(… || …) ? 'en' : 'ru'`, so any saved value, Russian included, gave English. The pick is now a tested function: the saved choice, else English for an English browser, else Russian (#19).
+- The generator did nothing since 1.1.0: `generator.js` looked for `#generator-panel` while the page has `#panel-generator`, so no button, tab or slider of the generator was wired up, and «Сгенерировать» under the password field was dead too. A test now checks that every id the scripts look up exists on the page (#19).
+- Express answered a body over 5 kB and malformed JSON with `500`; it now gives `413` and `400` like the Pages Functions, and the test that compares the two covers both cases (#19).
+
+**Languages**
+- `POST /api/v1/analyze` and `/api/v1/breach-check` take `"lang": "ru"` or `"en"`; the score, crack time, strengths, weaknesses, recommendations and error messages come back in it. Without `lang` the answer is Russian, word for word as in 1.2.0, so older clients keep working; errors raised before the body is read follow `Accept-Language`. The texts are one dictionary per language in `src/i18n/` (#19).
+- The answer gains `score` (`empty`, `very_weak` … `excellent`) and `weaknessCodes`, the same in every language: the page colours the meter and decides the NIST badge by them instead of matching Russian words (#19).
+- The page sends its language and asks again when the visitor switches. Everything it writes itself is in `public/locales/` too: the status line, badges and tooltips, history, trainer, theme button, PNG export, ARIA labels and the tab title (#19).
+- English passphrase word lists: the same six themes, 80 words each, none of which the analyzer takes for a common pattern, even with the digit the generator appends (#19).
+- The 404 page has the same language switch (#19).
+
+**Page**
+- `<link rel="canonical">`, `og:url`, a 1200×630 `og:image` in the design-system colours (`tools/og-card.html`), `twitter:card` `summary_large_image`, a `sitemap.xml` with its line in `robots.txt` (#19).
+- The web-app manifest is called «Good Pass» with an English description instead of a Russian-only name (#19).
+- Service worker cache `goodpass-v6`, so returning visitors get the new scripts (#19).
+
+**Project**
+- Express 5.3 and express-rate-limit 8.7 (Dependabot); Express serves local runs and tests only (#17).
+- Log lines carry the score code and the language instead of the Russian score label (#19).
+
 ## 1.2.0 — 2026-11-03
 
 The API works in production, the interface is on the morgunov.tech design system, the repo is public with CI.

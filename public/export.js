@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 export function initExport() {
   document.getElementById('btn-export')?.addEventListener('click', exportPNG);
 }
@@ -50,7 +52,7 @@ async function exportPNG() {
   // Title.
   ctx.fillStyle = p.fg;
   ctx.font = `500 28px ${p.sans}`;
-  ctx.fillText('Good Pass — анализ пароля', 40, 64);
+  ctx.fillText(t('export_title'), 40, 64);
 
   // Gather data from DOM.
   const score = document.getElementById('score')?.textContent || '—';
@@ -59,8 +61,10 @@ async function exportPNG() {
   const nist = document.getElementById('nist-badge')?.textContent || '';
   const breach = document.getElementById('breach-badge')?.textContent || '';
 
-  // Score: outlined badge in the strength colour, like .badge on the page.
-  const scoreColor = p.strength[scoreLevel(score)];
+  // Score: outlined badge in the strength colour, like .badge on the page;
+  // the level is the meter's (0 empty … 4 excellent).
+  const level = Number(document.querySelector('.meter-fill')?.dataset.strength) || 0;
+  const scoreColor = p.strength[level] ?? p.strength[0];
   ctx.strokeStyle = scoreColor;
   ctx.lineWidth = 2;
   ctx.strokeRect(41, 91, 238, 58);
@@ -71,10 +75,10 @@ async function exportPNG() {
   // Stats.
   ctx.fillStyle = p.muted;
   ctx.font = `400 16px ${p.sans}`;
-  ctx.fillText(`Время перебора: ${time}`, 40, 190);
-  ctx.fillText(`Энтропия: ${entropy}`, 40, 220);
+  ctx.fillText(t('export_time', { value: time }), 40, 190);
+  ctx.fillText(t('export_entropy', { value: entropy }), 40, 220);
   if (nist) ctx.fillText(`NIST: ${nist}`, 40, 250);
-  if (breach) ctx.fillText(`Утечки: ${breach}`, 40, 280);
+  if (breach) ctx.fillText(t('export_breach', { value: breach }), 40, 280);
 
   // Strengths and weaknesses under DS micro-labels.
   const strengths = [...document.querySelectorAll('#strengths li')].map((li) => li.textContent);
@@ -84,8 +88,8 @@ async function exportPNG() {
     ctx.font = `500 11px ${p.mono}`;
     ctx.fillText(spaced(text.toUpperCase()), x, 330);
   };
-  label('Сильные стороны', 40, p.strength[3]);
-  label('Слабые стороны', 420, p.strength[1]);
+  label(t('export_strengths'), 40, p.strength[3]);
+  label(t('export_weaknesses'), 420, p.strength[1]);
   ctx.fillStyle = p.fg;
   ctx.font = `400 14px ${p.sans}`;
   strengths.slice(0, 3).forEach((s, i) => ctx.fillText(`+ ${truncate(s, 40)}`, 40, 357 + i * 22));
@@ -108,15 +112,6 @@ async function exportPNG() {
     a.click();
     URL.revokeObjectURL(url);
   }, 'image/png');
-}
-
-// Same scale as the meter: 0 very weak … 4 excellent.
-function scoreLevel(score) {
-  if (score.includes('Отличный')) return 4;
-  if (score.includes('Сильный')) return 3;
-  if (score.includes('Средний')) return 2;
-  if (score.includes('Слабый')) return 1;
-  return 0;
 }
 
 // Canvas has no letter-spacing everywhere; thin spaces approximate the

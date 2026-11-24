@@ -1,7 +1,7 @@
 {
-  "name": "Good Pass — проверка стойкости пароля",
+  "name": "Good Pass",
   "short_name": "Good Pass",
-  "description": "Проверьте стойкость пароля, узнайте время взлома и получите рекомендации.",
+  "description": "How strong a password is, how long it takes to crack and what to change. In Russian and English.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#edeae5",

@@ -3,11 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Good Pass — проверка стойкости пароля</title>
+    <title data-i18n="meta_title">Good Pass — проверка стойкости пароля</title>
     <meta name="description" content="Проверьте стойкость пароля: оценка энтропии, время перебора, советы по улучшению." />
+    <link rel="canonical" href="https://good-pass.pages.dev/" />
     <meta property="og:title" content="Good Pass — проверка стойкости пароля" />
     <meta property="og:description" content="Узнайте, сколько времени потребуется на взлом вашего пароля, и как сделать его надёжнее." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://good-pass.pages.dev/" />
+    <meta property="og:image" content="https://good-pass.pages.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Good Pass — проверка стойкости пароля / password strength check" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23d9531e'/><text x='16' y='23' font-family='monospace' font-size='20' text-anchor='middle' fill='%2314110d'>G</text></svg>" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#edeae5" media="(prefers-color-scheme: light)" />
@@ -20,15 +27,15 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <a href="#password-input" class="skip-nav">Перейти к вводу пароля</a>
+    <a href="#password-input" class="skip-nav" data-i18n="skip_nav">Перейти к вводу пароля</a>
 
     <!-- History sidebar -->
-    <aside id="history-sidebar" class="history-sidebar" aria-label="История проверок">
+    <aside id="history-sidebar" class="history-sidebar" aria-label="История проверок" data-i18n-label="aria_history">
       <div class="history-header">
         <h2 data-i18n="history_title">История</h2>
         <div class="history-actions">
           <button class="btn-icon" id="btn-clear-history" aria-label="Очистить историю" data-i18n-label="history_clear">&#x2715;</button>
-          <button class="btn-icon" id="btn-toggle-history" aria-label="Закрыть">&#x2715;</button>
+          <button class="btn-icon" id="btn-toggle-history" aria-label="Закрыть" data-i18n-label="aria_close">&#x2715;</button>
         </div>
       </div>
       <ul id="history-list" class="history-list"></ul>
@@ -36,10 +43,10 @@
 
     <main class="layout" aria-labelledby="page-title">
       <!-- Main tabs -->
-      <nav class="main-tabs" aria-label="Режим работы">
+      <nav class="main-tabs" aria-label="Режим работы" data-i18n-label="aria_mode">
         <button class="main-tab active" data-main-tab="analyzer" data-i18n="tab_analyzer">Анализатор</button>
         <button class="main-tab" data-main-tab="generator" data-i18n="tab_generator">Генератор</button>
-        <button class="btn-icon btn-history-toggle" id="btn-toggle-history-outer" aria-label="Открыть историю">&#x23F3;</button>
+        <button class="btn-icon btn-history-toggle" id="btn-toggle-history-outer" aria-label="Открыть историю" data-i18n-label="aria_open_history">&#x23F3;</button>
       </nav>
 
       <!-- ANALYZER PANEL -->
@@ -59,7 +66,7 @@
             <p id="strength-label" class="strength-label" role="status" aria-live="polite" data-i18n="status_empty">Введите пароль, чтобы начать.</p>
             <div class="action-buttons">
               <button type="button" class="btn-action" id="generate-password" data-i18n="btn_generate">Сгенерировать</button>
-              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" hidden data-i18n="btn_copy">Копировать</button>
+              <button type="button" class="btn-action" id="copy-password" aria-label="Скопировать пароль" data-i18n-label="aria_copy_password" hidden data-i18n="btn_copy">Копировать</button>
               <button type="button" class="btn-action" id="btn-train" data-i18n="btn_train">Тренажёр</button>
               <button type="button" class="btn-action" id="btn-export" data-i18n="btn_export">Экспорт PNG</button>
             </div>
@@ -74,7 +81,7 @@
 
       <!-- ANALYSIS -->
       <section class="analysis" aria-live="polite">
-        <div class="meter" role="img" aria-label="Индикатор стойкости">
+        <div class="meter" role="img" aria-label="Индикатор стойкости" data-i18n-label="aria_meter">
           <div class="meter-fill" data-strength="0"></div>
         </div>
         <div class="stats">
@@ -152,12 +159,12 @@
           <div class="gen-control">
             <label data-i18n="gen_theme">Тема словаря</label>
             <select id="gen-theme">
-              <option value="default">Универсальный</option>
-              <option value="nature">Природа</option>
-              <option value="space">Космос</option>
-              <option value="food">Еда</option>
-              <option value="animals">Животные</option>
-              <option value="mythology">Мифология</option>
+              <option value="default" data-i18n="wordlist_default">Универсальный</option>
+              <option value="nature" data-i18n="wordlist_nature">Природа</option>
+              <option value="space" data-i18n="wordlist_space">Космос</option>
+              <option value="food" data-i18n="wordlist_food">Еда</option>
+              <option value="animals" data-i18n="wordlist_animals">Животные</option>
+              <option value="mythology" data-i18n="wordlist_mythology">Мифология</option>
             </select>
           </div>
           <div class="gen-toggles">
@@ -190,7 +197,7 @@
       </section>
 
       <!-- Education -->
-      <section class="education" aria-label="Объяснение критериев стойкости">
+      <section class="education" aria-label="Объяснение критериев стойкости" data-i18n-label="aria_education">
         <article class="education-card">
           <h2 data-i18n="edu_good_title">Что делает пароль хорошим?</h2>
           <ul>
@@ -216,7 +223,7 @@
       <p data-i18n="footer_text">Запоминайте пароли фразами, добавляйте редкие символы и используйте менеджер паролей — так вы сохраняете и удобство, и защиту.</p>
       <div class="footer-controls">
         <button class="btn-icon" id="btn-theme" aria-label="Переключить тему">Авто</button>
-        <button class="btn-icon" id="btn-lang" aria-label="Сменить язык">EN</button>
+        <button class="btn-icon" id="btn-lang" aria-label="Сменить язык" data-i18n-label="aria_lang">EN</button>
         <a href="https://github.com/morgunovtech/good-pass" class="btn-icon footer-link" target="_blank" rel="noopener" data-i18n="footer_opensource">Открытый код</a>
       </div>
     </footer>
@@ -226,11 +233,11 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 data-i18n="trainer_title">Тренажёр запоминания</h2>
-          <button class="btn-icon" id="trainer-close" aria-label="Закрыть">&times;</button>
+          <button class="btn-icon" id="trainer-close" aria-label="Закрыть" data-i18n-label="aria_close">&times;</button>
         </div>
         <p class="trainer-display" id="trainer-display"></p>
         <div id="trainer-chars" class="trainer-chars"></div>
-        <input type="text" id="trainer-input" class="trainer-input" placeholder="Введите пароль по памяти" autocomplete="off" />
+        <input type="text" id="trainer-input" class="trainer-input" placeholder="Введите пароль по памяти" data-i18n-placeholder="trainer_placeholder" autocomplete="off" />
         <p id="trainer-result" class="trainer-result"></p>
         <button class="btn-action" id="trainer-reveal" data-i18n="trainer_reveal">Показать ответ</button>
       </div>

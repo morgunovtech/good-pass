@@ -1,18 +1,23 @@
+import { getLocale, t } from './i18n.js';
+
 const MAX_ITEMS = 10;
 let history = [];
 
 export function initHistory() {
   document.getElementById('btn-clear-history')?.addEventListener('click', clearHistory);
   document.getElementById('btn-toggle-history')?.addEventListener('click', toggleSidebar);
+  document.addEventListener('langchange', render);
   render();
 }
 
 export function addToHistory(entry) {
+  // The score is kept as its code and the time as a Date, so the list
+  // redraws in the other language when the visitor switches.
   history.unshift({
     password: entry.password,
-    scoreLabel: entry.scoreLabel,
+    score: entry.score,
     entropyBits: entry.entropyBits,
-    time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    time: new Date()
   });
 
   if (history.length > MAX_ITEMS) history.pop();
@@ -37,7 +42,7 @@ function render() {
   if (history.length === 0) {
     const li = document.createElement('li');
     li.className = 'history-empty';
-    li.textContent = 'История пуста.';
+    li.textContent = t('history_empty');
     list.appendChild(li);
     return;
   }
@@ -56,13 +61,14 @@ function render() {
 
     const meta = document.createElement('span');
     meta.className = 'history-meta';
-    meta.textContent = `${entry.scoreLabel} | ${entry.entropyBits} бит | ${entry.time}`;
+    const time = entry.time.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
+    meta.textContent = `${t(`score_${entry.score}`)} | ${t('bits', { bits: entry.entropyBits })} | ${time}`;
 
     info.append(pwSpan, meta);
 
     const btn = document.createElement('button');
     btn.className = 'btn-action';
-    btn.textContent = 'Проверить';
+    btn.textContent = t('history_check');
     btn.addEventListener('click', () => {
       const input = document.getElementById('password-input');
       if (input) {

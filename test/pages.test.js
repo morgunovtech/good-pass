@@ -1,6 +1,6 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 
 import { onRequestPost as analyze } from '../functions/api/v1/analyze.js';
 import { onRequestPost as breachCheck } from '../functions/api/v1/breach-check.js';
@@ -36,19 +36,51 @@ describe('Pages Function: POST /api/v1/analyze', () => {
     try {
       await new Promise((resolve) => server.once('listening', resolve));
       const { port } = server.address();
-      for (const body of [{ password: 'X$k9Lm!2qW@7nRtP-ZvBc3Fg8Jh' }, { password: '' }, { password: 5 }]) {
-        const viaExpress = await fetch(`http://localhost:${port}/api/v1/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const viaPages = await post(analyze, body);
-        assert.equal(viaPages.status, viaExpress.status);
-        assert.deepEqual(await viaPages.json(), await viaExpress.json());
+      // Passwords without recommendations: those carry random examples.
+      const bodies = [];
+      for (const lang of [undefined, 'en']) {
+        for (const password of ['X$k9Lm!2qW@7nRtP-ZvBc3Fg8Jh', '', 5, 'A'.repeat(200)]) {
+          bodies.push(JSON.stringify({ password, lang }));
+        }
+      }
+      // Bodies that never reach the handler: over 5 kB, malformed JSON.
+      bodies.push(JSON.stringify({ password: 'a'.repeat(6000) }), '{"password":');
+
+      for (const acceptLanguage of ['ru-RU,ru;q=0.9', 'en-US,en;q=0.9']) {
+        const headers = { 'Content-Type': 'application/json', 'Accept-Language': acceptLanguage };
+        for (const body of bodies) {
+          const viaExpress = await fetch(`http://localhost:${port}/api/v1/analyze`, { method: 'POST', headers, body });
+          const viaPages = await post(analyze, body, headers);
+          assert.equal(viaPages.status, viaExpress.status, body.slice(0, 40));
+          assert.deepEqual(await viaPages.json(), await viaExpress.json(), body.slice(0, 40));
+        }
       }
     } finally {
       server.close();
     }
+  });
+
+  it('answers in English when asked, in Russian by default', async () => {
+    const en = await (await post(analyze, { password: 'weekly-check-Storm#2045', lang: 'en' })).json();
+    assert.equal(en.scoreLabel, 'Excellent');
+    assert.equal(en.score, 'excellent');
+    assert.doesNotMatch(JSON.stringify(en), /[а-яё]/i);
+
+    const ru = await (await post(analyze, { password: 'weekly-check-Storm#2045' })).json();
+    assert.equal(ru.scoreLabel, 'Отличный');
+    assert.equal(ru.score, 'excellent');
+
+    const error = await (await post(analyze, { password: 5, lang: 'en' })).json();
+    assert.equal(error.error, 'The password must be a string.');
+  });
+
+  it('reads the language of an unreadable body from Accept-Language', async () => {
+    const headers = { 'Content-Type': 'application/json', 'Accept-Language': 'en-GB,en;q=0.9' };
+    const res = await post(analyze, '{"password":', headers);
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).error, 'Malformed JSON.');
+    const ru = await post(analyze, '{"password":');
+    assert.equal((await ru.json()).error, 'Некорректный JSON.');
   });
 
   it('returns 400 for a non-string password', async () => {
@@ -110,7 +142,10 @@ describe('Pages Function: POST /api/v1/breach-check', () => {
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.deepEqual(body.suffixes, []);
-    assert.ok(body.error);
+    assert.equal(body.error, 'Проверка утечек временно недоступна.');
+
+    const en = await (await post(breachCheck, { hashPrefix: 'ABCDE', lang: 'en' })).json();
+    assert.equal(en.error, 'The breach check is temporarily unavailable.');
   });
 });
 
@@ -134,6 +169,40 @@ describe('Pages static files', () => {
 
     const res = await fetch(`${baseUrl}/healthz`);
     assert.equal(pagesCsp, res.headers.get('content-security-policy'));
+  });
+
+  it('robots.txt points to the sitemap, which lists the home page', async () => {
+    const robots = await (await fetch(`${baseUrl}/robots.txt`)).text();
+    assert.match(robots, /^Sitemap: https:\/\/good-pass\.pages\.dev\/sitemap\.xml$/m);
+    const sitemap = await fetch(`${baseUrl}/sitemap.xml`);
+    assert.equal(sitemap.status, 200);
+    assert.match(await sitemap.text(), /<loc>https:\/\/good-pass\.pages\.dev\/<\/loc>/);
+  });
+
+  it('index.html names its canonical address and a 1200×630 preview image', async () => {
+    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+    assert.match(html, /<link rel="canonical" href="https:\/\/good-pass\.pages\.dev\/" \/>/);
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image" \/>/);
+    const image = html.match(/<meta property="og:image" content="https:\/\/good-pass\.pages\.dev\/([^"]+)"/);
+    assert.ok(image, 'no og:image');
+    const png = await readFile(new URL(`../public/${image[1]}`, import.meta.url));
+    // PNG signature, then the IHDR chunk with the width and height.
+    assert.equal(png.toString('ascii', 1, 4), 'PNG');
+    assert.equal(png.readUInt32BE(16), 1200);
+    assert.equal(png.readUInt32BE(20), 630);
+  });
+
+  it('every element the scripts look up by id is on the page', async () => {
+    // generator.js looked for #generator-panel while the page has
+    // #panel-generator, so the whole generator was dead from 1.1.0 to 1.2.0.
+    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+    const dir = new URL('../public/', import.meta.url);
+    for (const file of (await readdir(dir)).filter((f) => f.endsWith('.js') && f !== '404.js')) {
+      const js = await readFile(new URL(file, dir), 'utf8');
+      for (const [, id] of js.matchAll(/getElementById\('([^']+)'\)/g)) {
+        assert.match(html, new RegExp(`\\sid="${id}"`), `${file}: #${id}`);
+      }
+    }
   });
 
   for (const page of ['index.html', '404.html']) {

@@ -176,6 +176,43 @@ describe('HTTP API', () => {
     assert.equal(res.status, 400);
   });
 
+  it('answers in English with "lang": "en"', async () => {
+    const res = await request('/api/v1/analyze', {
+      method: 'POST',
+      body: { password: 'weekly-check-Storm#2045', lang: 'en' }
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.scoreLabel, 'Excellent');
+    assert.equal(res.body.estimatedTime, 'Practically impossible to brute-force');
+    assert.ok(res.body.weaknesses.includes('Birth years and dates are common in passwords.'));
+    assert.deepEqual(res.body.weaknessCodes, ['date']);
+  });
+
+  it('answers a malformed body with 400 and an oversized one with 413, like Pages', async () => {
+    const malformed = await new Promise((resolve, reject) => {
+      const req = http.request(new URL('/api/v1/analyze', baseUrl), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+      });
+      req.on('error', reject);
+      req.end('{"password":');
+    });
+    assert.equal(malformed.status, 400);
+    assert.equal(malformed.body.error, 'Некорректный JSON.');
+
+    const large = await request('/api/v1/analyze', {
+      method: 'POST',
+      body: { password: 'a'.repeat(6000) },
+      headers: { 'Accept-Language': 'en' }
+    });
+    assert.equal(large.status, 413);
+    assert.equal(large.body.error, 'The request is too large.');
+  });
+
   // --- Legacy route ---
   it('POST /api/analyze redirects to /api/v1/analyze', async () => {
     const url = new URL('/api/analyze', baseUrl);
@@ -193,5 +230,16 @@ describe('HTTP API', () => {
     });
     assert.equal(res.status, 307);
     assert.ok(res.headers.location.includes('/api/v1/analyze'));
+  });
+
+  // Last: it spends the minute's allowance of 60 requests.
+  it('limits the API to 60 requests a minute, in the asked language', async () => {
+    let res;
+    for (let i = 0; i < 61; i++) {
+      res = await request('/api/v1/analyze', { method: 'POST', body: { password: 'x', lang: 'en' } });
+      if (res.status === 429) break;
+    }
+    assert.equal(res.status, 429);
+    assert.equal(res.body.error, 'Too many requests. Try again in a minute.');
   });
 });

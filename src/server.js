@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { handleAnalyze, handleBreachCheck } from './api.js';
+import { langFromAcceptLanguage, messagesFor, resolveLang } from './i18n/index.js';
 import { log } from './log.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,13 +26,13 @@ app.disable('x-powered-by');
 app.use(compression());
 app.use(express.json({ limit: '5kb' }));
 
-// Rate limit for API.
+// Rate limit for API (express.json() has run, so the body's "lang" is known).
 const apiLimiter = rateLimit({
   windowMs: 60_000,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Слишком много запросов. Попробуйте через минуту.' }
+  message: (req) => ({ error: messagesFor(resolveLang(req.body?.lang)).errors.rate_limited })
 });
 
 // Security headers.
@@ -82,9 +83,24 @@ app.post('/api/analyze', apiLimiter, (req, res) => {
   res.redirect(307, '/api/v1/analyze');
 });
 
+// Errors of express.json() answer like pagesFunction() in src/api.js: 413 for
+// a body over 5 kB, 400 for malformed JSON. The body is unread, so its "lang"
+// is too: Accept-Language decides.
+const BODY_ERRORS = {
+  'entity.too.large': { status: 413, key: 'too_large' },
+  'entity.parse.failed': { status: 400, key: 'bad_json' }
+};
+
 app.use((err, req, res, _next) => {
+  const { errors } = messagesFor(langFromAcceptLanguage(req.get('accept-language')));
+  const bodyError = BODY_ERRORS[err?.type];
+  if (bodyError) {
+    log('warn', 'invalid_body', { reason: err.type });
+    res.status(bodyError.status).json({ error: errors[bodyError.key] });
+    return;
+  }
   log('error', 'unhandled_error', { message: err?.message ?? 'unknown' });
-  res.status(500).json({ error: 'Что-то пошло не так. Попробуйте снова позже.' });
+  res.status(500).json({ error: errors.internal });
 });
 
 export { app };

@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 let targetPassword = '';
 
 export function initTrainer() {
@@ -33,7 +35,7 @@ function startTraining() {
     display.hidden = true;
     trainerInput.disabled = false;
     trainerInput.focus();
-    result.textContent = 'Введите пароль по памяти:';
+    result.textContent = t('trainer_type');
   }, 5000);
 }
 
@@ -70,9 +72,9 @@ function checkInput() {
   if (typedArr.length >= target.length) {
     const pct = Math.round((correct / target.length) * 100);
     if (pct === 100) {
-      result.textContent = `Отлично! Вы запомнили пароль на 100%.`;
+      result.textContent = t('trainer_perfect');
     } else {
-      result.textContent = `Совпадение: ${pct}%. Попробуйте ещё раз!`;
+      result.textContent = t('trainer_score', { pct });
     }
   }
 }
