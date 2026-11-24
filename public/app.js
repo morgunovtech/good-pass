@@ -4,7 +4,7 @@ import { initTheme } from './theme.js';
 import { initShortcuts } from './shortcuts.js';
 import { initTrainer } from './trainer.js';
 import { initExport } from './export.js';
-import { initI18n } from './i18n.js';
+import { initI18n, getLang, getLocale, t } from './i18n.js';
 
 // DOM refs.
 const input = document.getElementById('password-input');
@@ -29,14 +29,34 @@ let debounceTimer;
 let lastAnalysis = null;
 let lastBreachCount = null;
 
+// The meter level of each score code the API returns (the code is the same in
+// every language, the label is not).
+const SCORE_LEVEL = { very_weak: 1, weak: 1, medium: 2, strong: 3, excellent: 4 };
+
 // --- Init all modules ---
+// Strings first: every module below renders through t().
+await initI18n();
 initGenerator();
 initHistory();
 initTheme();
 initShortcuts();
 initTrainer();
 initExport();
-initI18n();
+
+// The visitor switched the language: redraw what the page wrote itself and
+// ask the API again, so the analysis comes back in the new language.
+document.addEventListener('langchange', () => {
+  updateToggle(input.type !== 'password');
+  const password = input.value;
+  if (!password) {
+    resetResults();
+    return;
+  }
+  if (controller) controller.abort();
+  clearTimeout(debounceTimer);
+  strengthLabel.textContent = t('status_analyzing');
+  analyzePassword(password, { record: false });
+});
 
 // --- Main tabs ---
 document.querySelectorAll('[data-main-tab]').forEach((btn) => {
@@ -58,11 +78,16 @@ document.getElementById('btn-toggle-history-outer')?.addEventListener('click', (
 toggleButton?.addEventListener('click', () => {
   const isHidden = input.type === 'password';
   input.type = isHidden ? 'text' : 'password';
-  toggleButton.setAttribute('aria-pressed', String(isHidden));
-  toggleButton.textContent = isHidden ? 'Скрыть' : 'Показать';
-  toggleButton.setAttribute('aria-label', isHidden ? 'Скрыть пароль' : 'Показать пароль');
+  updateToggle(isHidden);
   input.focus();
 });
+
+function updateToggle(visible) {
+  if (!toggleButton) return;
+  toggleButton.setAttribute('aria-pressed', String(visible));
+  toggleButton.textContent = visible ? t('btn_hide') : t('btn_show');
+  toggleButton.setAttribute('aria-label', visible ? t('aria_hide_password') : t('aria_show_password'));
+}
 
 // --- Copy ---
 copyButton?.addEventListener('click', async () => {
@@ -71,7 +96,7 @@ copyButton?.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(password);
     const orig = copyButton.textContent;
-    copyButton.textContent = 'Скопировано!';
+    copyButton.textContent = t('btn_copied');
     setTimeout(() => { copyButton.textContent = orig; }, 1500);
   } catch { /* noop */ }
 });
@@ -85,7 +110,7 @@ document.getElementById('generate-password')?.addEventListener('click', () => {
 // --- Input handler ---
 input.addEventListener('input', (event) => {
   const password = event.target.value;
-  strengthLabel.textContent = password ? 'Анализируем\u2026' : 'Введите пароль, чтобы начать.';
+  strengthLabel.textContent = password ? t('status_analyzing') : t('status_empty');
 
   if (copyButton) copyButton.hidden = !password;
 
@@ -105,13 +130,15 @@ input.addEventListener('input', (event) => {
   debounceTimer = setTimeout(() => analyzePassword(password), 250);
 });
 
-async function analyzePassword(password) {
+// record: false re-asks for the same password (after a language switch)
+// without adding it to the history again.
+async function analyzePassword(password, { record = true } = {}) {
   controller = new AbortController();
   try {
     const response = await fetch('/api/v1/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, lang: getLang() }),
       signal: controller.signal
     });
 
@@ -123,30 +150,29 @@ async function analyzePassword(password) {
     const result = await response.json();
     lastAnalysis = result;
     renderResult(password, result);
-    addToHistory({ password, scoreLabel: result.scoreLabel, entropyBits: result.entropyBits });
+    if (record) addToHistory({ password, score: result.score, entropyBits: result.entropyBits });
 
     // Breach check (async, non-blocking).
     checkBreach(password, result);
   } catch (error) {
     if (error.name === 'AbortError') return;
-    strengthLabel.textContent = 'Не удалось получить ответ. Попробуйте снова.';
+    strengthLabel.textContent = t('status_error');
     hideSkeleton();
   }
 }
 
 function renderResult(password, result) {
   hideSkeleton();
-  const strengthLevel = mapScoreToLevel(result.scoreLabel);
-  meterFill.dataset.strength = strengthLevel.toString();
+  meterFill.dataset.strength = String(SCORE_LEVEL[result.score] ?? 0);
 
-  strengthLabel.textContent = password ? `Пароль: ${result.scoreLabel}` : 'Введите пароль, чтобы начать.';
+  strengthLabel.textContent = password ? t('status_password', { score: result.scoreLabel }) : t('status_empty');
   scoreEl.textContent = result.scoreLabel ?? '\u2014';
   timeEl.textContent = result.estimatedTime ?? '\u2014';
   updateTimeTooltip(result.estimatedSeconds);
-  entropyEl.textContent = result.entropyBits ? `${result.entropyBits} бит` : '\u2014';
+  entropyEl.textContent = result.entropyBits ? t('bits', { bits: result.entropyBits }) : '\u2014';
 
-  renderList(strengthsList, result.strengths, 'Добавьте больше длины и разнообразия.');
-  renderList(weaknessesList, result.weaknesses, 'Пароль выглядит устойчивым — продолжайте в том же духе.');
+  renderList(strengthsList, result.strengths, t('list_strengths_empty'));
+  renderList(weaknessesList, result.weaknesses, t('list_weaknesses_empty'));
 
   // Recommendations.
   renderRecommendations(result.recommendations);
@@ -174,16 +200,15 @@ function renderRecommendations(recs) {
 
     const gain = document.createElement('span');
     gain.className = 'rec-gain';
-    gain.textContent = `+${rec.entropyGain} бит`;
+    gain.textContent = t('rec_entropy_gain', { bits: rec.entropyGain });
 
     const useBtn = document.createElement('button');
     useBtn.className = 'btn-action';
-    useBtn.textContent = 'Попробовать';
+    useBtn.textContent = t('rec_try');
     useBtn.addEventListener('click', () => {
       input.value = rec.example;
       input.type = 'text';
-      toggleButton.setAttribute('aria-pressed', 'true');
-      toggleButton.textContent = 'Скрыть';
+      updateToggle(true);
       input.dispatchEvent(new Event('input'));
     });
 
@@ -196,7 +221,7 @@ function renderRecommendations(recs) {
 // --- Breach check via HIBP k-anonymity ---
 async function checkBreach(password, analysis) {
   if (!breachBadge) return;
-  breachBadge.textContent = 'Проверяем утечки\u2026';
+  breachBadge.textContent = t('breach_checking');
   breachBadge.className = 'badge badge-checking';
   breachBadge.hidden = false;
 
@@ -213,13 +238,13 @@ async function checkBreach(password, analysis) {
     const res = await fetch('/api/v1/breach-check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hashPrefix: prefix })
+      body: JSON.stringify({ hashPrefix: prefix, lang: getLang() })
     });
 
     const result = await res.json();
 
     if (result.error && (!result.suffixes || result.suffixes.length === 0)) {
-      breachBadge.textContent = 'Проверка утечек недоступна';
+      breachBadge.textContent = t('breach_unavailable');
       breachBadge.className = 'badge badge-unavailable';
       lastBreachCount = null;
       updateNistBadge(analysis, null);
@@ -230,18 +255,17 @@ async function checkBreach(password, analysis) {
     lastBreachCount = match ? match.count : 0;
 
     if (match) {
-      breachBadge.textContent = `Найден в ${match.count.toLocaleString('ru-RU')} утечках!`;
+      breachBadge.textContent = t('breach_found', { count: match.count.toLocaleString(getLocale()) });
       breachBadge.className = 'badge badge-breach-found';
-      breachBadge.title = 'Мы не отправляем ваш пароль. Используется метод k-анонимности.';
     } else {
-      breachBadge.textContent = 'Не найден в известных утечках';
+      breachBadge.textContent = t('breach_safe');
       breachBadge.className = 'badge badge-breach-safe';
-      breachBadge.title = 'Мы не отправляем ваш пароль. Используется метод k-анонимности.';
     }
+    breachBadge.title = t('breach_trust');
 
     updateNistBadge(analysis, lastBreachCount);
   } catch {
-    breachBadge.textContent = 'Проверка утечек недоступна';
+    breachBadge.textContent = t('breach_unavailable');
     breachBadge.className = 'badge badge-unavailable';
     lastBreachCount = null;
     updateNistBadge(analysis, null);
@@ -256,19 +280,17 @@ function updateNistBadge(analysis, breachCount) {
   const password = input.value;
   const len = [...password].length;
 
-  if (len < 8) reasons.push('Минимум 8 символов');
-  if (breachCount && breachCount > 0) reasons.push('Найден в утечках');
-  if (/^(.)\1+$/u.test(password)) reasons.push('Повторяющиеся символы');
-
-  const hasCommonPattern = analysis?.weaknesses?.some((w) => w.includes('популярный шаблон'));
-  if (hasCommonPattern) reasons.push('Содержит распространённый шаблон');
+  if (len < 8) reasons.push(t('nist_reason_length'));
+  if (breachCount && breachCount > 0) reasons.push(t('nist_reason_breached'));
+  if (/^(.)\1+$/u.test(password)) reasons.push(t('nist_reason_repeated'));
+  if (analysis?.weaknessCodes?.includes('common_pattern')) reasons.push(t('nist_reason_pattern'));
 
   if (reasons.length === 0) {
-    nistBadge.textContent = 'Соответствует NIST SP 800-63B';
+    nistBadge.textContent = t('nist_compliant');
     nistBadge.className = 'badge badge-nist-ok';
     nistBadge.title = '';
   } else {
-    nistBadge.textContent = 'Не соответствует NIST';
+    nistBadge.textContent = t('nist_noncompliant');
     nistBadge.className = 'badge badge-nist-fail';
     nistBadge.title = reasons.join('; ');
   }
@@ -298,12 +320,12 @@ function updateTimeTooltip(seconds) {
     return;
   }
   if (!Number.isFinite(seconds)) {
-    timeEl.title = 'Больше 10^18 секунд — практический перебор невозможен.';
+    timeEl.title = t('time_tip_beyond');
     return;
   }
   timeEl.title = seconds < 1
-    ? 'Меньше секунды. Нужно увеличить длину и разнообразие.'
-    : `Оценка перебора: ~${seconds.toLocaleString('ru-RU')} секунд.`;
+    ? t('time_tip_instant')
+    : t('time_tip_seconds', { seconds: seconds.toLocaleString(getLocale()) });
 }
 
 function renderList(container, items, emptyState) {
@@ -322,20 +344,16 @@ function renderList(container, items, emptyState) {
 }
 
 function resetResults() {
-  strengthLabel.textContent = 'Введите пароль, чтобы начать.';
-  if (toggleButton) {
-    toggleButton.textContent = 'Показать';
-    toggleButton.setAttribute('aria-pressed', 'false');
-    toggleButton.setAttribute('aria-label', 'Показать пароль');
-  }
+  strengthLabel.textContent = t('status_empty');
+  updateToggle(false);
   if (input.type !== 'password') input.type = 'password';
   meterFill.dataset.strength = '0';
   scoreEl.textContent = '\u2014';
   timeEl.textContent = '\u2014';
   entropyEl.textContent = '\u2014';
   timeEl.removeAttribute('title');
-  renderList(strengthsList, null, 'Введите пароль, чтобы увидеть сильные стороны.');
-  renderList(weaknessesList, null, 'Печатайте пароль — здесь появятся подсказки.');
+  renderList(strengthsList, null, t('list_strengths_placeholder'));
+  renderList(weaknessesList, null, t('list_weaknesses_placeholder'));
   if (analysisSection) analysisSection.classList.remove('visible');
   if (copyButton) copyButton.hidden = true;
   if (breachBadge) { breachBadge.hidden = true; breachBadge.textContent = ''; }
@@ -344,16 +362,6 @@ function resetResults() {
   if (inlineBar) { inlineBar.style.opacity = '0'; inlineBar.style.width = '10%'; }
   lastAnalysis = null;
   lastBreachCount = null;
-}
-
-function mapScoreToLevel(score) {
-  switch (score) {
-    case 'Очень слабый': case 'Слабый': return 1;
-    case 'Средний': return 2;
-    case 'Сильный': return 3;
-    case 'Отличный': return 4;
-    default: return 0;
-  }
 }
 
 function showSkeleton() {

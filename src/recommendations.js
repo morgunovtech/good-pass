@@ -1,23 +1,26 @@
 import { analyzePassword } from './passwordAnalyzer.js';
+import { messagesFor } from './i18n/index.js';
 
 const SYMBOLS = '!@#$%&*-+=?';
 const DIGITS = '0123456789';
 
 /**
  * Generate up to 3 concrete recommendations to improve the password.
- * Each recommendation includes the modified password and entropy gain.
+ * Each recommendation includes the modified password and entropy gain; the
+ * tips and the words of the examples are in the asked language.
  */
-export function generateRecommendations(password, analysis) {
+export function generateRecommendations(password, analysis, lang) {
   if (!password || analysis.entropyBits >= 90) return [];
 
+  const { tips, words } = messagesFor(lang);
   const recs = [];
 
   // 1. Too short — suggest extending.
   if ([...password].length < 12) {
-    const extended = password + randomWord();
+    const extended = password + pick(words);
     const gain = analyzePassword(extended).entropyBits - analysis.entropyBits;
     recs.push({
-      tip: 'Добавьте ещё одно слово для увеличения длины.',
+      tip: tips.add_word,
       example: extended,
       entropyGain: Math.max(0, Math.round(gain))
     });
@@ -28,7 +31,7 @@ export function generateRecommendations(password, analysis) {
     const modified = capitalizeFirst(password);
     const gain = analyzePassword(modified).entropyBits - analysis.entropyBits;
     recs.push({
-      tip: 'Добавьте заглавную букву.',
+      tip: tips.add_upper,
       example: modified,
       entropyGain: Math.max(0, Math.round(gain))
     });
@@ -39,7 +42,7 @@ export function generateRecommendations(password, analysis) {
     const modified = password + randomDigits(2);
     const gain = analyzePassword(modified).entropyBits - analysis.entropyBits;
     recs.push({
-      tip: 'Добавьте пару цифр.',
+      tip: tips.add_digits,
       example: modified,
       entropyGain: Math.max(0, Math.round(gain))
     });
@@ -47,22 +50,21 @@ export function generateRecommendations(password, analysis) {
 
   // 4. Missing symbols — append a symbol.
   if (!/[~!@#$%^&*()\-_=+\[\]{}|;:'",.<>/?`\\]/.test(password)) {
-    const sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-    const modified = password + sym;
+    const modified = password + pick(SYMBOLS);
     const gain = analyzePassword(modified).entropyBits - analysis.entropyBits;
     recs.push({
-      tip: 'Добавьте спецсимвол для роста энтропии.',
+      tip: tips.add_symbol,
       example: modified,
       entropyGain: Math.max(0, Math.round(gain))
     });
   }
 
   // 5. Common pattern — suggest a completely different approach.
-  if (analysis.weaknesses.some((w) => w.includes('популярный шаблон'))) {
-    const fresh = generateFreshSuggestion();
+  if (analysis.weaknessCodes.includes('common_pattern')) {
+    const fresh = generateFreshSuggestion(words);
     const freshAnalysis = analyzePassword(fresh);
     recs.push({
-      tip: 'Пароль содержит известный шаблон. Попробуйте фразу:',
+      tip: tips.use_phrase,
       example: fresh,
       entropyGain: Math.max(0, Math.round(freshAnalysis.entropyBits - analysis.entropyBits))
     });
@@ -94,16 +96,14 @@ function randomDigits(n) {
   return Array.from({ length: n }, () => DIGITS[Math.floor(Math.random() * 10)]).join('');
 }
 
-const WORDS = ['Вершина', 'Маяк', 'Кедр', 'Рассвет', 'Бриз', 'Якорь', 'Парус', 'Комета'];
-
-function randomWord() {
-  return WORDS[Math.floor(Math.random() * WORDS.length)];
+function pick(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
-function generateFreshSuggestion() {
-  const w1 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const w2 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+function generateFreshSuggestion(words) {
+  const w1 = pick(words);
+  const w2 = pick(words);
+  const sym = pick(SYMBOLS);
   const num = Math.floor(Math.random() * 9000) + 1000;
   return `${w1}-${w2}${sym}${num}`;
 }

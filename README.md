@@ -12,26 +12,27 @@ A small educational web app that shows how strong a password really is, how long
 - **Memory trainer.** Shows a password for five seconds, then checks how well you can type it from memory.
 - **History, PNG export, shortcuts.** Recent checks stay in your browser; a result can be saved as an image; keyboard shortcuts for the main actions.
 - **Works offline** as a PWA once loaded; light, dark and auto themes.
-- **Languages.** The interface — labels, buttons, FAQ — switches between Russian and English (`public/locales/`). The analysis itself is Russian for now: the score, strengths, weaknesses, recommendations and error messages come from the API in Russian, and the generator's word lists are Russian.
+- **Languages.** Russian and English, switched at the bottom of the page: the interface (`public/locales/`), the analysis the API returns — score, crack time, strengths, weaknesses, recommendations, error messages (`src/i18n/`) — and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian.
 
 ## Privacy
 
 - The breach check is k-anonymous: the browser hashes the password with SHA-1 and sends only the first 5 characters of the hash; the server asks Have I Been Pwned (`api.pwnedpasswords.com`) for every hash with that prefix and the match happens in the browser. The server keeps each HIBP answer in memory for 24 hours, by prefix.
-- The analyzer runs on the server (a Cloudflare Pages Function) over HTTPS. The password is used for that one response and is never logged or stored. Each analysis writes one log line with the password's length, entropy and score; a rejected request (not a string, empty) or a failure is logged by its reason only.
+- The analyzer runs on the server (a Cloudflare Pages Function) over HTTPS. The password is used for that one response and is never logged or stored. Each analysis writes one log line with the password's length, entropy, score and language; a rejected request (not a string, empty) or a failure is logged by its reason only.
 - History lives in your browser's local storage and can be cleared in one click.
 
 ## API
 
 Two `POST` endpoints, JSON in and out, served by the Pages Functions in production and by Express locally — the same handlers in `src/api.js`, so a test checks that both answer identically.
 
-- `POST /api/v1/analyze` with `{ "password": "…" }` returns the score, entropy, estimated crack time, strengths, weaknesses and recommendations. A password over 128 characters gets `400`; a request body over 5 kB gets `413`.
-- `POST /api/v1/breach-check` with `{ "hashPrefix": "5BAA6" }` — the first 5 hex characters of the SHA-1 — returns the matching suffixes with their counts. When Have I Been Pwned is unreachable the answer is still `200`, with an empty list and an `error` field, so the page says the check is unavailable instead of failing.
-- The local Express server limits the API to 60 requests a minute per IP; the Pages Functions have no rate limit of their own.
+- `POST /api/v1/analyze` with `{ "password": "…", "lang": "en" }` returns the score, entropy, estimated crack time, strengths, weaknesses and recommendations. A password over 128 characters gets `400`; a request body over 5 kB gets `413`, malformed JSON `400`.
+- `lang` is `"ru"` or `"en"` and sets the language of every text in the answer, errors included. It is optional: without it, or with any other value, the answer is Russian, exactly as before `lang` existed. Errors raised before the body is read (over 5 kB, malformed JSON) follow the first language of `Accept-Language` instead. `score` (`empty`, `very_weak`, `weak`, `medium`, `strong`, `excellent`) and `weaknessCodes` are the same in every language, for code that acts on the result.
+- `POST /api/v1/breach-check` with `{ "hashPrefix": "5BAA6" }` — the first 5 hex characters of the SHA-1 — returns the matching suffixes with their counts; `lang` works here too. When Have I Been Pwned is unreachable the answer is still `200`, with an empty list and an `error` field, so the page says the check is unavailable instead of failing.
+- The local Express server limits the API to 60 requests a minute per IP. The Pages Functions have no rate limit: Cloudflare's rate-limiting binding is a Workers feature that Pages Functions do not support, and WAF rate-limiting rules need a zone of one's own, which good-pass.pages.dev is not.
 - Express only: `GET /healthz` (`{"status":"ok"}`) and the legacy `POST /api/analyze`, a `307` redirect to `/api/v1/analyze`.
 
 ## Tech stack
 
-Static front end in `public/` (vanilla JS modules, the [morgunov.tech design system](https://s.morgunov.tech) for styles and fonts, a service worker for offline use). The API lives in `functions/api/v1/` as Cloudflare Pages Functions; locally the same logic (`src/api.js`) is served by Express. Tests use the built-in `node:test`.
+Static front end in `public/` (vanilla JS modules, the [morgunov.tech design system](https://s.morgunov.tech) for styles and fonts, a service worker for offline use). The API lives in `functions/api/v1/` as Cloudflare Pages Functions; locally the same logic (`src/api.js`) is served by Express. The API's texts are one dictionary per language in `src/i18n/`. Tests use the built-in `node:test`.
 
 ## Run locally
 
@@ -48,7 +49,7 @@ npx wrangler@4 pages dev public    # the production setup: Pages Functions and _
 npm test
 ```
 
-The suite covers the analyzer and the recommendations, the breach-check parsing, the HTTP API through Express, and the production setup (`test/pages.test.js`): the Pages Functions answer exactly like Express, only the 5-character prefix reaches HIBP, HIBP being down comes back as `200` with an `error`, `public/_headers` sends the same CSP as the server, and the HTML has nothing inline that the CSP would block.
+The suite covers the analyzer and the recommendations, the breach-check parsing, the HTTP API through Express, and the production setup (`test/pages.test.js`): the Pages Functions answer exactly like Express in both languages, only the 5-character prefix reaches HIBP, HIBP being down comes back as `200` with an `error`, `public/_headers` sends the same CSP as the server, and the HTML has nothing inline that the CSP would block. `test/i18n.test.js` checks the languages: the page's language pick, the same keys in every dictionary, no Cyrillic left in English, the word lists.
 
 CI runs the tests, `npm audit --omit=dev --audit-level=high` and a gitleaks secret scan on every pull request; `main` requires both checks to pass. Dependabot opens one grouped npm PR a week; minor and patch bumps merge on their own once CI is green, majors wait for a human.
 
@@ -56,7 +57,7 @@ CI runs the tests, `npm audit --omit=dev --audit-level=high` and a gitleaks secr
 
 Cloudflare Pages deploys `main` automatically: `public/` with the headers from `public/_headers`, and the Functions from `functions/`.
 
-The service worker caches the static files under one name (`goodpass-v5` in `public/sw.js`); bump it whenever CSS or JS change, or returning visitors keep the old files. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
+The service worker caches the static files under one name (`goodpass-v6` in `public/sw.js`); bump it whenever CSS or JS change, or returning visitors keep the old files. The link preview `public/og-image.png` (1200×630) is rendered from `tools/og-card.html` with headless Chrome; the command is at the top of that file. Versions follow SemVer and are listed in [CHANGELOG.md](CHANGELOG.md); the number in `package.json` and `src/log.js` (the `version` field of every log line) matches its top entry.
 
 ## What it creates outside the repo
 

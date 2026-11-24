@@ -1,4 +1,5 @@
-import { WORDLISTS, WORDLIST_LABELS } from './wordlists.js';
+import { WORDLISTS, MNEMONIC_ACTIONS } from './wordlists.js';
+import { getLang, t } from './i18n.js';
 
 const LOWER = 'abcdefghijklmnopqrstuvwxyz';
 const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -13,7 +14,7 @@ let currentSettings = {
 };
 
 export function initGenerator() {
-  const panel = document.getElementById('generator-panel');
+  const panel = document.getElementById('panel-generator');
   if (!panel) return;
 
   // Tab switching.
@@ -128,7 +129,8 @@ function generateRandom() {
 
 function generatePassphrase() {
   const s = currentSettings.passphrase;
-  const wordlist = WORDLISTS[s.theme] || WORDLISTS.default;
+  const lists = WORDLISTS[getLang()] || WORDLISTS.ru;
+  const wordlist = lists[s.theme] || lists.default;
   const sep = SEPARATORS[s.separator] || '-';
 
   const words = [];
@@ -157,14 +159,14 @@ function showMnemonic(words, sep) {
   const container = document.getElementById('mnemonic-tip');
   if (!container) return;
 
-  const actions = ['обрушилась на', 'летит к', 'зовёт', 'сияет рядом с', 'защищает', 'встречает'];
+  const actions = MNEMONIC_ACTIONS[getLang()] || MNEMONIC_ACTIONS.ru;
   const parts = words.map((w, i) => {
     const clean = w.replace(/\d+$/, '');
     if (i === 0) return clean;
     return `${securePick(actions)} ${clean}`;
   });
 
-  container.textContent = `Представьте: ${parts.join(', ')}.`;
+  container.textContent = `${t('mnemonic_prefix')} ${parts.join(', ')}.`;
   container.hidden = false;
 }
 
@@ -184,18 +186,18 @@ function generateBatch() {
 
     const btn = document.createElement('button');
     btn.className = 'btn-action batch-copy';
-    btn.textContent = 'Копировать';
+    btn.textContent = t('btn_copy');
     btn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(pw);
-        btn.textContent = 'Скопировано!';
-        setTimeout(() => { btn.textContent = 'Копировать'; }, 1200);
+        btn.textContent = t('btn_copied');
+        setTimeout(() => { btn.textContent = t('btn_copy'); }, 1200);
       } catch { /* noop */ }
     });
 
     const useBtn = document.createElement('button');
     useBtn.className = 'btn-action batch-use';
-    useBtn.textContent = 'Анализ';
+    useBtn.textContent = t('btn_analyze');
     useBtn.addEventListener('click', () => setPasswordAndAnalyze(pw));
 
     li.append(span, btn, useBtn);
@@ -213,7 +215,8 @@ function setPasswordAndAnalyze(password) {
   const toggle = document.getElementById('toggle-visibility');
   if (toggle) {
     toggle.setAttribute('aria-pressed', 'true');
-    toggle.textContent = 'Скрыть';
+    toggle.textContent = t('btn_hide');
+    toggle.setAttribute('aria-label', t('aria_hide_password'));
   }
 
   input.dispatchEvent(new Event('input'));

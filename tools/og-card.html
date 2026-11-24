@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+  The social preview card, public/og-image.png (1200×630), in the morgunov.tech
+  design system v1 (light theme). Not served; after changing it, render it again
+  from the repo root with headless Chrome:
+
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+    --user-data-dir="$(mktemp -d)" --hide-scrollbars --force-device-scale-factor=1 \
+    --window-size=1200,630 --virtual-time-budget=5000 \
+    --screenshot="$PWD/public/og-image.png" "file://$PWD/tools/og-card.html"
+-->
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Good Pass — og:image</title>
+    <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/fonts.css?v=64eea157" />
+    <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/tokens.css?v=fa7fc139" />
+    <style>
+      /* The strength scale of public/styles.css (light theme). */
+      :root {
+        --strength-0: #b42318;
+        --strength-1: #b03e10;
+        --strength-2: #8a5a00;
+        --strength-3: #2e6b3c;
+        --strength-4: #2f5d7c;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        background: var(--v4-bg);
+        color: var(--v4-fg);
+        font-family: var(--v4-sans);
+        padding: 40px;
+      }
+      .card {
+        position: relative;
+        height: 100%;
+        background: var(--v4-paper);
+        border: 1px solid var(--v4-line);
+        border-top: 6px solid var(--v4-orange);
+        padding: 52px 64px 48px;
+        display: flex;
+        flex-direction: column;
+      }
+      .label {
+        font-family: var(--v4-mono);
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--v4-dim);
+      }
+      h1 { font-size: 104px; font-weight: 500; line-height: 1; letter-spacing: -0.02em; margin-top: 28px; }
+      .ru { font-size: 40px; font-weight: 400; margin-top: 22px; }
+      .en { font-size: 32px; font-weight: 400; color: var(--v4-muted); margin-top: 8px; }
+      .meter { display: flex; gap: 8px; margin-top: auto; }
+      .meter span { flex: 1; height: 18px; }
+      .meter span:nth-child(1) { background: var(--strength-0); }
+      .meter span:nth-child(2) { background: var(--strength-1); }
+      .meter span:nth-child(3) { background: var(--strength-2); }
+      .meter span:nth-child(4) { background: var(--strength-3); }
+      .meter span:nth-child(5) { background: var(--strength-4); }
+      .foot { display: flex; justify-content: space-between; margin-top: 24px; }
+      .mark {
+        position: absolute; top: 52px; right: 64px;
+        width: 72px; height: 72px;
+        background: var(--v4-orange); color: var(--v4-on-accent);
+        font-family: var(--v4-mono); font-size: 44px; font-weight: 500;
+        display: flex; align-items: center; justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="mark">G</div>
+      <p class="label">good-pass.pages.dev</p>
+      <h1>Good Pass</h1>
+      <p class="ru">Проверка стойкости пароля</p>
+      <p class="en">Password strength check</p>
+      <div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="foot">
+        <span class="label">Entropy · crack time · breaches · generator</span>
+        <span class="label">RU / EN</span>
+      </div>
+    </div>
+  </body>
+</html>

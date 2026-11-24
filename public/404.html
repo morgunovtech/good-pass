@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
-    <title>Страница не найдена — Good Pass</title>
+    <title data-i18n="notfound_page_title">Страница не найдена — Good Pass</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23d9531e'/><text x='16' y='23' font-family='monospace' font-size='20' text-anchor='middle' fill='%2314110d'>G</text></svg>" />
     <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/fonts.css?v=64eea157" />
     <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/tokens.css?v=fa7fc139" />
@@ -13,8 +13,15 @@
   </head>
   <body>
     <main>
-      <h1>Страница не найдена</h1>
-      <p>Такого адреса на Good Pass нет. Проверить пароль можно на <a href="/">главной странице</a>.</p>
+      <h1 data-i18n="notfound_title">Страница не найдена</h1>
+      <p><span data-i18n="notfound_text">Такого адреса на Good Pass нет. Проверить пароль можно на</span> <a href="/" data-i18n="notfound_link">главной странице</a>.</p>
     </main>
+    <footer class="footer">
+      <div class="footer-controls">
+        <button class="btn-icon" id="btn-lang" aria-label="Сменить язык" data-i18n-label="aria_lang">EN</button>
+      </div>
+    </footer>
+    <!-- The same language as the main page: the saved choice or the browser's. -->
+    <script type="module" src="/404.js"></script>
   </body>
 </html>

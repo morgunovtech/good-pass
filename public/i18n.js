@@ -1,20 +1,41 @@
 const STORAGE_KEY = 'good-pass-lang';
+export const LANGS = ['ru', 'en'];
 let currentLang = 'ru';
 let strings = {};
 
+/**
+ * The interface language: the visitor's saved choice first, then the browser
+ * language (English if it is English), then Russian.
+ */
+export function pickLang(stored, browserLang) {
+  if (LANGS.includes(stored)) return stored;
+  if (typeof browserLang === 'string' && browserLang.toLowerCase().startsWith('en')) return 'en';
+  return 'ru';
+}
+
+// Storage can be off (private mode, blocked site data): the choice then lasts
+// for the visit only.
+function storedLang() {
+  try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+}
+
+function saveLang(lang) {
+  try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* noop */ }
+}
+
 export async function initI18n() {
-  currentLang = localStorage.getItem(STORAGE_KEY) || navigator.language?.startsWith('en') ? 'en' : 'ru';
-  // Default to Russian if detection is ambiguous.
-  if (currentLang !== 'en') currentLang = 'ru';
+  currentLang = pickLang(storedLang(), navigator.language);
 
   await loadLocale(currentLang);
   applyAll();
 
   document.getElementById('btn-lang')?.addEventListener('click', async () => {
     currentLang = currentLang === 'ru' ? 'en' : 'ru';
-    localStorage.setItem(STORAGE_KEY, currentLang);
+    saveLang(currentLang);
     await loadLocale(currentLang);
     applyAll();
+    // Modules that render text themselves (analysis, history, theme) redraw.
+    document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
   });
 }
 
@@ -57,4 +78,9 @@ function applyAll() {
 
 export function getLang() {
   return currentLang;
+}
+
+/** The interface language as a locale for numbers and times. */
+export function getLocale() {
+  return currentLang === 'en' ? 'en-US' : 'ru-RU';
 }
