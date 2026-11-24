@@ -2,7 +2,7 @@
 
 Небольшой образовательный сервис, который показывает, насколько пароль силён на самом деле, сколько времени уйдёт на его перебор и что именно изменить, чтобы он стал сильнее.
 
-**Сайт:** https://good-pass.pages.dev · **Лицензия:** MIT · **English version:** [README.md](README.md)
+**Сайт:** https://good-pass.morgunov.tech · **Лицензия:** MIT · **English version:** [README.md](README.md)
 
 ## Что умеет
 
@@ -24,10 +24,16 @@
 
 Два `POST`-эндпоинта, JSON на вход и на выход; на проде их отдают Pages Functions, локально — Express. Обработчики общие (`src/api.js`), и тест проверяет, что оба отвечают одинаково.
 
+```bash
+curl -s -X POST -H 'content-type: application/json' \
+  -d '{"password":"weekly-check-Storm#2045","lang":"en"}' \
+  https://good-pass.morgunov.tech/api/v1/analyze
+```
+
 - `POST /api/v1/analyze` с `{ "password": "…", "lang": "en" }` возвращает балл, энтропию, оценку времени перебора, сильные и слабые стороны и рекомендации. Пароль длиннее 128 символов — `400`; тело запроса больше 5 КБ — `413`, некорректный JSON — `400`.
 - `lang` — `"ru"` или `"en"`, язык всех текстов ответа, ошибок тоже. Поле необязательное: без него или с любым другим значением ответ русский, ровно такой же, как до появления `lang`. Ошибки, которые случаются до чтения тела (больше 5 КБ, некорректный JSON), берут первый язык из `Accept-Language`. `score` (`empty`, `very_weak`, `weak`, `medium`, `strong`, `excellent`) и `weaknessCodes` одинаковы на всех языках — для кода, который что-то делает с результатом.
 - `POST /api/v1/breach-check` с `{ "hashPrefix": "5BAA6" }` — первые 5 hex-символов SHA-1 — возвращает подходящие суффиксы с числом утечек; `lang` работает и здесь. Если Have I Been Pwned недоступен, ответ всё равно `200`: пустой список и поле `error`, и страница пишет, что проверка временно недоступна, а не падает.
-- Локальный Express ограничивает API 60 запросами в минуту с одного IP. У Pages Functions лимита нет: binding ограничения частоты в Cloudflare есть только у Workers, Pages Functions его не поддерживают, а правилам WAF нужна своя зона, которой у good-pass.pages.dev нет.
+- Локальный Express ограничивает API 60 запросами в минуту с одного IP. У Pages Functions лимита нет: binding ограничения частоты в Cloudflare есть только у Workers, Pages Functions его не поддерживают, а правило WAF в зоне morgunov.tech ограничило бы только good-pass.morgunov.tech: good-pass.pages.dev отвечает тем же API вне зоны.
 - Только в Express: `GET /healthz` (`{"status":"ok"}`) и устаревший `POST /api/analyze` — редирект `307` на `/api/v1/analyze`.
 
 ## Стек
@@ -49,19 +55,19 @@ npx wrangler@4 pages dev public    # как на проде: Pages Functions и 
 npm test
 ```
 
-Тесты покрывают анализатор и рекомендации, разбор ответа HIBP, HTTP API через Express и продовую схему (`test/pages.test.js`): Pages Functions отвечают точно так же, как Express, на обоих языках, до HIBP доходит только 5-символьный префикс, недоступный HIBP возвращается как `200` с `error`, `public/_headers` отдаёт ту же CSP, что и сервер, а в HTML нет ничего инлайнового, что CSP заблокировала бы. `test/i18n.test.js` проверяет языки: выбор языка страницей, одинаковые ключи во всех словарях, ни одной кириллической буквы в английском, словари генератора.
+Тесты покрывают анализатор и рекомендации, разбор ответа HIBP, HTTP API через Express и продовую схему (`test/pages.test.js`): Pages Functions отвечают точно так же, как Express, на обоих языках, до HIBP доходит только 5-символьный префикс, недоступный HIBP возвращается как `200` с `error`, `public/_headers` отдаёт ту же CSP, что и сервер, и `noindex` на адресе pages.dev, а в HTML нет ничего инлайнового, что CSP заблокировала бы. `test/i18n.test.js` проверяет языки: выбор языка страницей, одинаковые ключи во всех словарях, ни одной кириллической буквы в английском, словари генератора.
 
 CI на каждый pull request запускает тесты, `npm audit --omit=dev --audit-level=high` и поиск секретов gitleaks; для `main` обе проверки обязательны. Dependabot раз в неделю открывает один сгруппированный npm PR; минорные и патч-обновления мержатся сами после зелёного CI, мажорные ждут человека.
 
 ## Деплой
 
-Cloudflare Pages деплоит `main` автоматически: `public/` с заголовками из `public/_headers` и функции из `functions/`.
+Cloudflare Pages деплоит `main` на https://good-pass.morgunov.tech автоматически: `public/` с заголовками из `public/_headers` и функции из `functions/`.
 
-Service worker кеширует статику под одним именем (`goodpass-v7` в `public/sw.js`); меняете CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
+Service worker кеширует статику под одним именем (`goodpass-v8` в `public/sw.js`); меняете CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
 
 ## Что проект создаёт снаружи
 
-- Проект Cloudflare Pages `good-pass`, который отдаёт https://good-pass.pages.dev из `main` (без своего домена). Снести: удалить проект в панели Cloudflare.
+- Проект Cloudflare Pages `good-pass`, который отдаёт `main` на своих доменах good-pass.morgunov.tech (основной) и gpass.morgunov.tech (правило переадресации Cloudflare отправляет его на основной с 301); их DNS-записи — в зоне morgunov.tech. https://good-pass.pages.dev — технический адрес проекта в Cloudflare: он продолжает работать, а `public/_headers` просит поисковики его не индексировать. Снести: удалить проект, обе DNS-записи и правило переадресации в панели Cloudflare.
 - На GitHub: защита ветки `main` с обязательными проверками `test · audit` и `secrets`, «Allow auto-merge» для workflow Dependabot, сам Dependabot.
 - Ключей API нет: range API Have I Been Pwned работает без ключа.
 

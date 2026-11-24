@@ -11,7 +11,7 @@ import { app } from '../src/server.js';
 // public/ with the headers from public/_headers.
 
 function post(handler, body, headers = { 'Content-Type': 'application/json' }) {
-  const request = new Request('https://good-pass.pages.dev/api/v1/x', {
+  const request = new Request('https://good-pass.morgunov.tech/api/v1/x', {
     method: 'POST',
     headers,
     body: typeof body === 'string' ? body : JSON.stringify(body)
@@ -171,19 +171,24 @@ describe('Pages static files', () => {
     assert.equal(pagesCsp, res.headers.get('content-security-policy'));
   });
 
+  it('_headers keeps search engines off the technical pages.dev host', async () => {
+    const headers = await readFile(new URL('../public/_headers', import.meta.url), 'utf8');
+    assert.match(headers, /^https:\/\/:project\.pages\.dev\/\*\n {2}X-Robots-Tag: noindex$/m);
+  });
+
   it('robots.txt points to the sitemap, which lists the home page', async () => {
     const robots = await (await fetch(`${baseUrl}/robots.txt`)).text();
-    assert.match(robots, /^Sitemap: https:\/\/good-pass\.pages\.dev\/sitemap\.xml$/m);
+    assert.match(robots, /^Sitemap: https:\/\/good-pass\.morgunov\.tech\/sitemap\.xml$/m);
     const sitemap = await fetch(`${baseUrl}/sitemap.xml`);
     assert.equal(sitemap.status, 200);
-    assert.match(await sitemap.text(), /<loc>https:\/\/good-pass\.pages\.dev\/<\/loc>/);
+    assert.match(await sitemap.text(), /<loc>https:\/\/good-pass\.morgunov\.tech\/<\/loc>/);
   });
 
   it('index.html names its canonical address and a 1200×630 preview image', async () => {
     const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-    assert.match(html, /<link rel="canonical" href="https:\/\/good-pass\.pages\.dev\/" \/>/);
+    assert.match(html, /<link rel="canonical" href="https:\/\/good-pass\.morgunov\.tech\/" \/>/);
     assert.match(html, /<meta name="twitter:card" content="summary_large_image" \/>/);
-    const image = html.match(/<meta property="og:image" content="https:\/\/good-pass\.pages\.dev\/([^"]+)"/);
+    const image = html.match(/<meta property="og:image" content="https:\/\/good-pass\.morgunov\.tech\/([^"]+)"/);
     assert.ok(image, 'no og:image');
     const png = await readFile(new URL(`../public/${image[1]}`, import.meta.url));
     // PNG signature, then the IHDR chunk with the width and height.
