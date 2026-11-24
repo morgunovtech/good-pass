@@ -57,7 +57,7 @@ CI на каждый pull request запускает тесты, `npm audit --om
 
 Cloudflare Pages деплоит `main` автоматически: `public/` с заголовками из `public/_headers` и функции из `functions/`.
 
-Service worker кеширует статику под одним именем (`goodpass-v6` в `public/sw.js`); меняете CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
+Service worker кеширует статику под одним именем (`goodpass-v7` в `public/sw.js`); меняете CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
 
 ## Что проект создаёт снаружи
 

@@ -2,6 +2,13 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.3.1 — 2026-11-24
+
+Returning visitors get the page's styles again.
+
+**Fixed**
+- Since 1.2.0 the page lost its styles and fonts for every visitor the service worker controlled, that is everyone who came back after a first visit: the worker answered the design system's stylesheets and fonts on s.morgunov.tech with its own `fetch()`, which the worker's CSP from `_headers` (`connect-src 'self'`) blocks. The worker now leaves other origins to the browser, which loads them under the page's CSP; `test/sw.test.js` runs `sw.js` against same-origin and cross-origin requests. Service worker cache `goodpass-v7` (#20).
+
 ## 1.3.0 — 2026-11-24
 
 The analysis speaks English: the API answers in the visitor's language, the generator works again and has English word lists, and the language picker keeps a saved Russian.
