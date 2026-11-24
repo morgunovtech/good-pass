@@ -40,7 +40,7 @@ curl -s -X POST -H 'content-type: application/json' \
 
 Статический фронтенд в `public/` (ванильные JS-модули, [дизайн-система morgunov.tech](https://s.morgunov.tech) для стилей и шрифтов, service worker для офлайна). API — функции Cloudflare Pages в `functions/api/v1/`; локально ту же логику (`src/api.js`) отдаёт Express (`src/server.js`), на проде он не работает — нужен для разработки и тестов. `/en/` — та же страница с английскими тегами для превью ссылок: LinkedIn, Telegram и другие превью читают теги `og:`, не запуская страницу, поэтому `src/englishPage.js` переписывает `<head>` из `public/index.html` по-английски (заголовок, описание, канонический адрес, `og:url`, картинку, `og:locale`); отдаёт её функция Pages в `functions/en/`, локально — Express. Тексты API — по словарю на язык в `src/i18n/`. Тесты на встроенном `node:test`.
 
-Для поисковиков и ИИ-ассистентов: на странице — блок JSON-LD `WebApplication` (автор — тот же `Person`, что на s.morgunov.tech) и мета подтверждения Яндекс Вебмастера; `public/robots.txt` пускает всех роботов и даёт Content Signals `search=yes, ai-input=yes` ([contentsignals.org](https://contentsignals.org); сигнала `ai-train` нет ни в какую сторону); `public/llms.txt` простым текстом описывает сервис, приватность и API.
+Для поисковиков и ИИ-ассистентов: на странице — блок JSON-LD `WebApplication` (автор — тот же `Person`, что на s.morgunov.tech) и мета подтверждения Яндекс Вебмастера; `public/robots.txt` пускает всех роботов и даёт Content Signals `search=yes, ai-input=yes, ai-train=yes` ([contentsignals.org](https://contentsignals.org): сайт можно показывать в поиске, использовать в ответах ИИ и для обучения ИИ); `public/llms.txt` простым текстом описывает сервис, приватность и API.
 
 ## Локальный запуск
 

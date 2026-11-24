@@ -40,7 +40,7 @@ curl -s -X POST -H 'content-type: application/json' \
 
 Static front end in `public/` (vanilla JS modules, the [morgunov.tech design system](https://s.morgunov.tech) for styles and fonts, a service worker for offline use). The API lives in `functions/api/v1/` as Cloudflare Pages Functions; locally the same logic (`src/api.js`) is served by Express. `/en/` is the same page with English link-preview tags: LinkedIn, Telegram and other link previews read the `og:` tags without running the page, so `src/englishPage.js` rewrites the `<head>` of `public/index.html` in English (title, description, canonical, `og:url`, image, `og:locale`), served by the Pages Function in `functions/en/` and by Express locally. The API's texts are one dictionary per language in `src/i18n/`. Tests use the built-in `node:test`.
 
-For search engines and AI assistants: the page carries a JSON-LD `WebApplication` block (author: the same `Person` as on s.morgunov.tech) and the Yandex Webmaster verification meta; `public/robots.txt` lets every crawler in and gives the Content Signals `search=yes, ai-input=yes` ([contentsignals.org](https://contentsignals.org); no `ai-train` signal either way); `public/llms.txt` describes the service, its privacy and the API in plain text.
+For search engines and AI assistants: the page carries a JSON-LD `WebApplication` block (author: the same `Person` as on s.morgunov.tech) and the Yandex Webmaster verification meta; `public/robots.txt` lets every crawler in and gives the Content Signals `search=yes, ai-input=yes, ai-train=yes` ([contentsignals.org](https://contentsignals.org): search results, AI answers and AI training may use the site); `public/llms.txt` describes the service, its privacy and the API in plain text.
 
 ## Run locally
 

@@ -1,6 +1,6 @@
-# Content signals: search and AI answers may use this site; see https://contentsignals.org
+# Content signals: search, AI answers and AI training may use this site; see https://contentsignals.org
 User-agent: *
 Allow: /
-Content-Signal: search=yes, ai-input=yes
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 Sitemap: https://good-pass.morgunov.tech/sitemap.xml

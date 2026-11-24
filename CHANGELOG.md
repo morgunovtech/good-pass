@@ -2,6 +2,13 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.4.1 — 2026-11-24
+
+`ai-train=yes`: the owner allows AI training. The page, the API and what leaves the browser do not change.
+
+- `robots.txt` gives the Content Signals `search=yes, ai-input=yes, ai-train=yes` (https://contentsignals.org): besides search results and AI answers, the site may be used to train AI models. In 1.3.3 `ai-train` was left unset until the owner decided (#22). The comment above the group says the same.
+- `test/pages.test.js` expects `ai-train=yes` in every group and exactly one `Content-Signal` line per group.
+
 ## 1.4.0 — 2026-11-24
 
 An English address for links shared on LinkedIn and elsewhere: https://good-pass.morgunov.tech/en/. The analysis, the API and what leaves the browser do not change.
