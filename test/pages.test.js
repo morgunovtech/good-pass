@@ -184,6 +184,48 @@ describe('Pages static files', () => {
     assert.match(await sitemap.text(), /<loc>https:\/\/good-pass\.morgunov\.tech\/<\/loc>/);
   });
 
+  it('robots.txt gives every group the same content signals', async () => {
+    const robots = await (await fetch(`${baseUrl}/robots.txt`)).text();
+    const groups = robots.split(/\n(?=User-agent:)/).filter((g) => g.startsWith('User-agent:'));
+    assert.ok(groups.length >= 1);
+    for (const group of groups) {
+      assert.match(group, /^Content-Signal: search=yes, ai-input=yes$/m, group.split('\n')[0]);
+    }
+    // No ai-train signal in either direction: the owner has not decided it.
+    assert.doesNotMatch(robots, /ai-train/);
+  });
+
+  it('llms.txt is served as text and links the site, the repository and the author', async () => {
+    const res = await fetch(`${baseUrl}/llms.txt`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /^text\/plain/);
+    const text = await res.text();
+    assert.match(text, /^# Good Pass/);
+    assert.match(text, /^> /m);
+    for (const url of ['https://good-pass.morgunov.tech/', 'https://github.com/morgunovtech/good-pass', 'https://s.morgunov.tech/']) {
+      assert.ok(text.includes(`(${url})`), url);
+    }
+  });
+
+  it('index.html carries the Yandex verification and a valid JSON-LD WebApplication', async () => {
+    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+    assert.match(html, /<meta name="yandex-verification" content="a06067ed9ce010f7" \/>/);
+    const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    assert.equal(blocks.length, 1);
+    const data = JSON.parse(blocks[0][1]);
+    assert.equal(data['@type'], 'WebApplication');
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+    assert.equal(data.url, canonical);
+    assert.equal(data.applicationCategory, 'SecurityApplication');
+    assert.equal(data.isAccessibleForFree, true);
+    assert.deepEqual(data.offers, { '@type': 'Offer', price: '0', priceCurrency: 'USD' });
+    assert.deepEqual(data.inLanguage, ['ru', 'en']);
+    assert.equal(data.sameAs, 'https://github.com/morgunovtech/good-pass');
+    // The Person of s.morgunov.tech's own JSON-LD: the same @id joins the two.
+    assert.equal(data.author['@id'], 'https://s.morgunov.tech/#person');
+    assert.equal(data.author.url, 'https://s.morgunov.tech/');
+  });
+
   it('index.html names its canonical address and a 1200×630 preview image', async () => {
     const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
     assert.match(html, /<link rel="canonical" href="https:\/\/good-pass\.morgunov\.tech\/" \/>/);
@@ -215,7 +257,9 @@ describe('Pages static files', () => {
       const html = await readFile(new URL(`../public/${page}`, import.meta.url), 'utf8');
       assert.doesNotMatch(html, /\sstyle\s*=/i, 'inline style attribute');
       assert.doesNotMatch(html, /<style[\s>]/i, '<style> element');
-      assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/i, 'inline <script>');
+      // A JSON-LD block is data, not a script: the browser never runs it, so script-src
+      // does not apply to it.
+      assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)(?![^>]*\stype="application\/ld\+json")[^>]*>/i, 'inline <script>');
       assert.doesNotMatch(html, /\son[a-z]+\s*=/i, 'inline event handler');
     });
   }

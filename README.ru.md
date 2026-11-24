@@ -40,6 +40,8 @@ curl -s -X POST -H 'content-type: application/json' \
 
 Статический фронтенд в `public/` (ванильные JS-модули, [дизайн-система morgunov.tech](https://s.morgunov.tech) для стилей и шрифтов, service worker для офлайна). API — функции Cloudflare Pages в `functions/api/v1/`; локально ту же логику (`src/api.js`) отдаёт Express (`src/server.js`), на проде он не работает — нужен для разработки и тестов. Тексты API — по словарю на язык в `src/i18n/`. Тесты на встроенном `node:test`.
 
+Для поисковиков и ИИ-ассистентов: на странице — блок JSON-LD `WebApplication` (автор — тот же `Person`, что на s.morgunov.tech) и мета подтверждения Яндекс Вебмастера; `public/robots.txt` пускает всех роботов и даёт Content Signals `search=yes, ai-input=yes` ([contentsignals.org](https://contentsignals.org); сигнала `ai-train` нет ни в какую сторону); `public/llms.txt` простым текстом описывает сервис, приватность и API.
+
 ## Локальный запуск
 
 ```bash
@@ -55,7 +57,7 @@ npx wrangler@4 pages dev public    # как на проде: Pages Functions и 
 npm test
 ```
 
-Тесты покрывают анализатор и рекомендации, разбор ответа HIBP, HTTP API через Express и продовую схему (`test/pages.test.js`): Pages Functions отвечают точно так же, как Express, на обоих языках, до HIBP доходит только 5-символьный префикс, недоступный HIBP возвращается как `200` с `error`, `public/_headers` отдаёт ту же CSP, что и сервер, и `noindex` на адресе pages.dev, а в HTML нет ничего инлайнового, что CSP заблокировала бы. `test/i18n.test.js` проверяет языки: выбор языка страницей, одинаковые ключи во всех словарях, ни одной кириллической буквы в английском, словари генератора.
+Тесты покрывают анализатор и рекомендации, разбор ответа HIBP, HTTP API через Express и продовую схему (`test/pages.test.js`): Pages Functions отвечают точно так же, как Express, на обоих языках, до HIBP доходит только 5-символьный префикс, недоступный HIBP возвращается как `200` с `error`, `public/_headers` отдаёт ту же CSP, что и сервер, и `noindex` на адресе pages.dev, а в HTML нет ничего инлайнового, что CSP заблокировала бы (блок JSON-LD — данные, браузер их не выполняет); в каждой группе `robots.txt` есть сигналы, `llms.txt` отдаётся как текст, JSON-LD разбирается и называет канонический адрес. `test/i18n.test.js` проверяет языки: выбор языка страницей, одинаковые ключи во всех словарях, ни одной кириллической буквы в английском, словари генератора.
 
 CI на каждый pull request запускает тесты, `npm audit --omit=dev --audit-level=high` и поиск секретов gitleaks; для `main` обе проверки обязательны. Dependabot раз в неделю открывает один сгруппированный npm PR; минорные и патч-обновления мержатся сами после зелёного CI, мажорные ждут человека.
 
@@ -63,11 +65,11 @@ CI на каждый pull request запускает тесты, `npm audit --om
 
 Cloudflare Pages деплоит `main` на https://good-pass.morgunov.tech автоматически: `public/` с заголовками из `public/_headers` и функции из `functions/`.
 
-Service worker кеширует статику под одним именем (`goodpass-v8` в `public/sw.js`); меняете CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
+Service worker кеширует статику под одним именем (`goodpass-v9` в `public/sw.js`); меняете страницу, CSS или JS — поднимайте его, иначе вернувшиеся посетители останутся со старыми файлами. Превью для ссылок `public/og-image.png` (1200×630) рендерится из `tools/og-card.html` headless-Chrome; команда — в начале этого файла. Версии по SemVer перечислены в [CHANGELOG.md](CHANGELOG.md); номер в `package.json` и `src/log.js` (поле `version` каждой строки лога) совпадает с верхней записью.
 
 ## Что проект создаёт снаружи
 
-- Проект Cloudflare Pages `good-pass`, который отдаёт `main` на своих доменах good-pass.morgunov.tech (основной) и gpass.morgunov.tech (правило переадресации Cloudflare отправляет его на основной с 301); их DNS-записи — в зоне morgunov.tech. https://good-pass.pages.dev — технический адрес проекта в Cloudflare: он продолжает работать, а `public/_headers` просит поисковики его не индексировать. Снести: удалить проект, обе DNS-записи и правило переадресации в панели Cloudflare.
+- Проект Cloudflare Pages `good-pass`, который отдаёт `main` на своих доменах good-pass.morgunov.tech (основной) и gpass.morgunov.tech (правило переадресации Cloudflare отправляет его на основной с 308, сохраняя путь и query: в отличие от 301, при 308 `POST` остаётся `POST`, так что вызовы API на старый адрес продолжают работать); их DNS-записи — в зоне morgunov.tech. https://good-pass.pages.dev — технический адрес проекта в Cloudflare: он продолжает работать, а `public/_headers` просит поисковики его не индексировать. Снести: удалить проект, обе DNS-записи и правило переадресации в панели Cloudflare.
 - На GitHub: защита ветки `main` с обязательными проверками `test · audit` и `secrets`, «Allow auto-merge» для workflow Dependabot, сам Dependabot.
 - Ключей API нет: range API Have I Been Pwned работает без ключа.
 

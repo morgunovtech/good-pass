@@ -2,6 +2,17 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.3.3 — 2026-11-24
+
+Search engines and AI assistants can find and cite Good Pass.
+
+**Discoverability**
+- `index.html` carries the Yandex Webmaster verification meta for good-pass.morgunov.tech (Google verifies the whole morgunov.tech domain by DNS) and a JSON-LD `WebApplication`: name, canonical URL, the README's first sentence, `SecurityApplication`, free, Russian and English, the GitHub repository, and the author as the same `Person` that s.morgunov.tech declares. The test that keeps inline scripts off the page lets this block through: it is data, which the browser never runs, so the CSP's `script-src` does not apply (#22).
+- `robots.txt` gives the Content Signals `search=yes, ai-input=yes` (https://contentsignals.org): search results and AI answers may use the site. There is no `ai-train` signal either way (#22).
+- `llms.txt`: what the service does, what leaves the browser and what never does, the API, the languages and the links, in plain text for AI assistants (#22).
+- Service worker cache `goodpass-v9`, so returning visitors get the new page (#22).
+- README: gpass.morgunov.tech redirects with a 308, not a 301 — a 308 keeps a `POST` a `POST`, path and query included, so API calls to the old address still work (#22).
+
 ## 1.3.2 — 2026-11-24
 
 Good Pass is published at https://good-pass.morgunov.tech.

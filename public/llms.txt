@@ -1,0 +1,42 @@
+# Good Pass — Password Strength Checker
+
+> Free educational web app that shows how strong a password really is, how long it would take to crack, and what exactly to change to make it stronger. The breach check is k-anonymous: only the first 5 characters of the password's SHA-1 hash leave the browser. The analysis runs on the site's own server function, which uses the password for that one answer and never logs or stores it.
+
+## What It Does
+
+Good Pass explains password strength instead of just colouring a bar: it scores the password, estimates the time to crack it, lists what makes it strong or weak, and suggests concrete changes, each with an example and the entropy it adds. It also checks whether the password appears in known breaches, generates new passwords and passphrases, and trains you to remember one.
+
+## Key Features
+
+- **Analyzer**: entropy in bits, estimated crack time, a score from very weak to excellent, the password's strengths and weaknesses, and recommendations with an example and the entropy each one adds.
+- **Breach check**: whether the password appears in known breaches (Have I Been Pwned), without sending the password or its full hash anywhere.
+- **Generator**: random passwords with a chosen length and character sets, or memorable passphrases from themed word lists, plus a batch of five at once; generated in the browser with `crypto.getRandomValues`.
+- **Memory trainer**: shows a password for five seconds, then checks how well you type it from memory.
+- **History, PNG export, shortcuts**: recent checks stay in the browser, a result can be saved as an image, the main actions have keyboard shortcuts.
+- **Works offline** as a PWA once loaded; light, dark and auto themes.
+
+## Privacy
+
+- **Breach check**: the browser hashes the password with SHA-1 and sends only the first 5 hex characters of the hash. The server asks Have I Been Pwned (`api.pwnedpasswords.com`) for every hash with that prefix, and the match happens in the browser. The server keeps each HIBP answer in memory for 24 hours, by prefix.
+- **Analysis**: the password is sent over HTTPS to the site's own Cloudflare Pages Function (`/api/v1/analyze`), used for that one response, and never logged or stored. Each analysis writes one log line with the password's length, entropy, score and language — never the password. A generated password goes to the analyzer like a typed one.
+- **History** lives in the browser's local storage and can be cleared in one click.
+- No accounts. The Content-Security-Policy allows scripts and API calls only to the site itself; the design system's styles and fonts load from https://s.morgunov.tech.
+
+## API
+
+Two `POST` endpoints, JSON in and out:
+
+- `POST /api/v1/analyze` with `{"password": "…", "lang": "en"}` returns the score, entropy, estimated crack time, strengths, weaknesses and recommendations.
+- `POST /api/v1/breach-check` with `{"hashPrefix": "5BAA6"}` (the first 5 hex characters of the SHA-1) returns the matching suffixes with their counts.
+
+`lang` is `"ru"` or `"en"`; without it the answer is in Russian.
+
+## Languages
+
+Russian and English: the interface, the analysis the API returns and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian.
+
+## Links
+
+- [Good Pass](https://good-pass.morgunov.tech/): the service
+- [Source code](https://github.com/morgunovtech/good-pass): the GitHub repository, MIT license
+- [Author](https://s.morgunov.tech/): Semyon Morgunov, who built it
