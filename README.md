@@ -2,7 +2,7 @@
 
 A small educational web app that shows how strong a password really is, how long it would take to crack, and what exactly to change to make it stronger.
 
-**Live:** https://good-pass.morgunov.tech (in English: https://good-pass.morgunov.tech/en/) · **License:** MIT · **Русская версия:** [README.ru.md](README.ru.md)
+**Status:** an early version, still taking shape · **Live:** https://good-pass.morgunov.tech (in English: https://good-pass.morgunov.tech/en/) · **License:** MIT · **Русская версия:** [README.ru.md](README.ru.md)
 
 ## What it does
 
@@ -10,15 +10,16 @@ A small educational web app that shows how strong a password really is, how long
 - **Breach check.** Tells you whether the password appears in known breaches (Have I Been Pwned), without sending the password or its full hash anywhere.
 - **Generator.** Random passwords with chosen length and character sets, or memorable passphrases from themed word lists, plus a batch of five at once.
 - **Memory trainer.** Shows a password for five seconds, then checks how well you can type it from memory.
-- **History, PNG export, shortcuts.** Recent checks stay in your browser; a result can be saved as an image; keyboard shortcuts for the main actions.
-- **Works offline** as a PWA once loaded; light, dark and auto themes.
+- **History, PNG export, shortcuts.** The last ten checks stay in the open tab; a result can be saved as an image; keyboard shortcuts for the main actions: Ctrl/Cmd+G generates a password, Ctrl/Cmd+H shows or hides it, Esc closes the trainer and the history.
+- **Installable as a PWA.** Once loaded, the page, the generator, the trainer and the themes work offline; the analyzer and the breach check need the network and say so. Light, dark and auto themes.
 - **Languages.** Russian and English, switched at the bottom of the page: the interface (`public/locales/`), the analysis the API returns — score, crack time, strengths, weaknesses, recommendations, error messages (`src/i18n/`) — and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian; https://good-pass.morgunov.tech/en/ always starts in English, and switching the language there moves the address to `/` (and back to `/en/` for English).
 
 ## Privacy
 
 - The breach check is k-anonymous: the browser hashes the password with SHA-1 and sends only the first 5 characters of the hash; the server asks Have I Been Pwned (`api.pwnedpasswords.com`) for every hash with that prefix and the match happens in the browser. The server keeps each HIBP answer in memory for 24 hours, by prefix.
 - The analyzer runs on the server (a Cloudflare Pages Function) over HTTPS. The password is used for that one response and is never logged or stored. Each analysis writes one log line with the password's length, entropy, score and language; a rejected request (not a string, empty) or a failure is logged by its reason only.
-- History lives in your browser's local storage and can be cleared in one click.
+- History lives only in the page's memory: nothing is written to the browser's storage, it is gone when the tab is closed or reloaded, and it can be cleared in one click before that. The browser keeps only the chosen language and theme.
+- The stylesheets and fonts (the morgunov.tech design system, IBM Plex) load from https://s.morgunov.tech, the author's own site: as any server it sees your IP and browser, sets no cookies and runs no analytics. The page itself loads no analytics.
 
 ## API
 
@@ -43,6 +44,8 @@ Static front end in `public/` (vanilla JS modules, the [morgunov.tech design sys
 For search engines and AI assistants: the page carries a JSON-LD `WebApplication` block (author: the same `Person` as on s.morgunov.tech) and the Yandex Webmaster verification meta; `public/robots.txt` lets every crawler in and gives the Content Signals `search=yes, ai-input=yes, ai-train=yes` ([contentsignals.org](https://contentsignals.org): search results, AI answers and AI training may use the site); `public/llms.txt` describes the service, its privacy and the API in plain text.
 
 ## Run locally
+
+Node: the current LTS (`lts/*`, what CI runs); nothing else to install.
 
 ```bash
 npm install
@@ -72,6 +75,7 @@ The service worker caches the static files under one name (`goodpass-v10` in `pu
 - A Cloudflare Pages project `good-pass`, serving `main` on the custom domains good-pass.morgunov.tech (primary) and gpass.morgunov.tech (a Cloudflare redirect rule sends it to the primary with a 308, keeping the path and the query: unlike a 301, a 308 keeps a `POST` a `POST`, so API calls to the old address still work); their DNS records are in the morgunov.tech zone. https://good-pass.pages.dev is the project's technical Cloudflare host: it keeps working, and `public/_headers` tells search engines not to index it. Teardown: delete the project, the two DNS records and the redirect rule in the Cloudflare dashboard.
 - On GitHub: branch protection on `main` with the required checks `test · audit` and `secrets`, «Allow auto-merge» for the Dependabot workflow, Dependabot itself.
 - No API keys: the Have I Been Pwned range API is keyless.
+- Search engines: the Yandex Webmaster verification meta in `public/index.html` (remove the site in Yandex Webmaster to tear down), an address property in Google Search Console (verified through the morgunov.tech domain property) and the Bing Webmaster import of it.
 
 ---
 

@@ -21,8 +21,9 @@ jobs:
       # a Dependabot bump is the fix.
       - run: npm audit --omit=dev --audit-level=high
 
-  # Private repos on the free plan get no GitHub secret scanning; gitleaks
-  # scans the whole history instead.
+  # Public repos get GitHub secret scanning, but a push protection miss or an
+  # old commit still slips through; gitleaks scans the whole history on every
+  # run so a leaked token fails the PR, not the audit.
   secrets:
     name: secrets
     # The action lists the PR's commits through the API; the default token
