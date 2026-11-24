@@ -12,14 +12,14 @@ Good Pass explains password strength instead of just colouring a bar: it scores 
 - **Breach check**: whether the password appears in known breaches (Have I Been Pwned), without sending the password or its full hash anywhere.
 - **Generator**: random passwords with a chosen length and character sets, or memorable passphrases from themed word lists, plus a batch of five at once; generated in the browser with `crypto.getRandomValues`.
 - **Memory trainer**: shows a password for five seconds, then checks how well you type it from memory.
-- **History, PNG export, shortcuts**: recent checks stay in the browser, a result can be saved as an image, the main actions have keyboard shortcuts.
-- **Works offline** as a PWA once loaded; light, dark and auto themes.
+- **History, PNG export, shortcuts**: the last ten checks stay in the open tab, a result can be saved as an image, the main actions have keyboard shortcuts (Ctrl/Cmd+G, Ctrl/Cmd+H, Esc).
+- **Installable as a PWA**: once loaded, the page, the generator, the trainer and the themes work offline; the analyzer and the breach check need the network. Light, dark and auto themes.
 
 ## Privacy
 
 - **Breach check**: the browser hashes the password with SHA-1 and sends only the first 5 hex characters of the hash. The server asks Have I Been Pwned (`api.pwnedpasswords.com`) for every hash with that prefix, and the match happens in the browser. The server keeps each HIBP answer in memory for 24 hours, by prefix.
 - **Analysis**: the password is sent over HTTPS to the site's own Cloudflare Pages Function (`/api/v1/analyze`), used for that one response, and never logged or stored. Each analysis writes one log line with the password's length, entropy, score and language — never the password. A generated password goes to the analyzer like a typed one.
-- **History** lives in the browser's local storage and can be cleared in one click.
+- **History** lives only in the page's memory (nothing is written to the browser's storage; gone on reload) and can be cleared in one click.
 - No accounts. The Content-Security-Policy allows scripts and API calls only to the site itself; the design system's styles and fonts load from https://s.morgunov.tech.
 
 ## API

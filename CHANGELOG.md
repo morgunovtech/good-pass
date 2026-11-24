@@ -2,6 +2,16 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.4.2 — 2026-11-24
+
+Docs-only patch: the README says what the page does, not more. The page, the API and what leaves the browser do not change.
+
+- History never lived in local storage: the page keeps the last ten checks in memory and loses them on reload. README (EN/RU) and `llms.txt` say so now; the privacy section also names s.morgunov.tech, where the stylesheets and fonts come from.
+- «Works offline as a PWA» became «installable as a PWA»: the page, the generator, the trainer and the themes work offline; the analyzer and the breach check need the network.
+- The keyboard shortcuts are listed (Ctrl/Cmd+G, Ctrl/Cmd+H, Esc), the Node requirement is named, the «outside the repo» list gains the search-engine registrations (Yandex Webmaster, Search Console, Bing).
+- A status line in both READMEs: an early version, still taking shape — the owner keeps it off the showcase for now.
+- `package.json` gets the `license` field (MIT, as `LICENSE` and the READMEs say); the stale comment in `ci.yml` about private repos is rewritten.
+
 ## 1.4.1 — 2026-11-24
 
 `ai-train=yes`: the owner allows AI training. The page, the API and what leaves the browser do not change.
