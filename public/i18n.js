@@ -4,13 +4,30 @@ let currentLang = 'ru';
 let strings = {};
 
 /**
- * The interface language: the visitor's saved choice first, then the browser
- * language (English if it is English), then Russian.
+ * The interface language: /en/ is English whatever was saved (it is the page
+ * with English link-preview tags); elsewhere the visitor's saved choice, then
+ * the browser language (English if it is English), then Russian.
  */
-export function pickLang(stored, browserLang) {
+export function pickLang(stored, browserLang, path) {
+  if (isEnglishPath(path)) return 'en';
   if (LANGS.includes(stored)) return stored;
   if (typeof browserLang === 'string' && browserLang.toLowerCase().startsWith('en')) return 'en';
   return 'ru';
+}
+
+function isEnglishPath(path) {
+  return typeof path === 'string' && /^\/en\/?$/.test(path);
+}
+
+/**
+ * The address after a switch to `lang`: / and /en/ follow the language, so a
+ * copied link opens with the preview in the language on screen. Any other
+ * path stays as it is (null).
+ */
+export function pathForLang(path, lang) {
+  if (typeof path !== 'string' || !/^\/(en\/?)?$/.test(path)) return null;
+  const next = lang === 'en' ? '/en/' : '/';
+  return next === path ? null : next;
 }
 
 // Storage can be off (private mode, blocked site data): the choice then lasts
@@ -24,7 +41,8 @@ function saveLang(lang) {
 }
 
 export async function initI18n() {
-  currentLang = pickLang(storedLang(), navigator.language);
+  // Opening /en/ is not a choice: the saved language stays for the next visit to /.
+  currentLang = pickLang(storedLang(), navigator.language, location.pathname);
 
   await loadLocale(currentLang);
   applyAll();
@@ -32,6 +50,8 @@ export async function initI18n() {
   document.getElementById('btn-lang')?.addEventListener('click', async () => {
     currentLang = currentLang === 'ru' ? 'en' : 'ru';
     saveLang(currentLang);
+    const next = pathForLang(location.pathname, currentLang);
+    if (next) history.replaceState(null, '', next + location.search + location.hash);
     await loadLocale(currentLang);
     applyAll();
     // Modules that render text themselves (analysis, history, theme) redraw.

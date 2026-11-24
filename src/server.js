@@ -1,10 +1,12 @@
 import express from 'express';
+import { readFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { handleAnalyze, handleBreachCheck } from './api.js';
+import { englishPage } from './englishPage.js';
 import { langFromAcceptLanguage, messagesFor, resolveLang } from './i18n/index.js';
 import { log } from './log.js';
 
@@ -49,6 +51,22 @@ app.use((req, res, next) => {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   next();
+});
+
+// /en/: the page with English link-preview tags, as the Pages Function in
+// functions/en/ serves it in production; /en redirects there.
+app.get('/en', async (req, res, next) => {
+  if (!req.path.endsWith('/')) {
+    res.redirect(301, `/en/${new URL(req.originalUrl, 'http://localhost').search}`);
+    return;
+  }
+  try {
+    const html = await readFile(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.type('html').send(englishPage(html).html);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Static files with caching.

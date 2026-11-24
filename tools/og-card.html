@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <!--
-  The social preview card, public/og-image.png (1200×630), in the morgunov.tech
-  design system v1 (light theme). Not served; after changing it, render it again
-  from the repo root with headless Chrome:
+  The social preview cards (1200×630) in the morgunov.tech design system v1
+  (light theme): public/og-image.png, Russian and English, for /, and
+  public/og-image-en.png, English only, for /en/ (this page with ?lang=en).
+  Not served; after changing it, render both again from the repo root with
+  headless Chrome:
 
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
-    --user-data-dir="$(mktemp -d)" --hide-scrollbars --force-device-scale-factor=1 \
-    --window-size=1200,630 --virtual-time-budget=5000 \
-    --screenshot="$PWD/public/og-image.png" "file://$PWD/tools/og-card.html"
+  for lang in ru en; do
+    out=public/og-image.png; [ "$lang" = en ] && out=public/og-image-en.png
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+      --user-data-dir="$(mktemp -d)" --hide-scrollbars --force-device-scale-factor=1 \
+      --window-size=1200,630 --virtual-time-budget=5000 \
+      --screenshot="$PWD/$out" "file://$PWD/tools/og-card.html?lang=$lang"
+  done
 -->
 <html lang="ru" data-theme="light">
   <head>
@@ -83,5 +88,13 @@
         <span class="label">RU / EN</span>
       </div>
     </div>
+    <script>
+      // ?lang=en: the card of /en/, English only.
+      if (new URLSearchParams(location.search).get('lang') === 'en') {
+        document.documentElement.lang = 'en';
+        document.querySelector('.ru').textContent = 'Password strength check';
+        document.querySelector('.en').textContent = 'How strong it really is, and what to change';
+      }
+    </script>
   </body>
 </html>

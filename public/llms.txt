@@ -33,10 +33,11 @@ Two `POST` endpoints, JSON in and out:
 
 ## Languages
 
-Russian and English: the interface, the analysis the API returns and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian.
+Russian and English: the interface, the analysis the API returns and the generator's word lists. The page starts in the visitor's saved choice, else in English for an English browser, else in Russian; https://good-pass.morgunov.tech/en/ always starts in English.
 
 ## Links
 
 - [Good Pass](https://good-pass.morgunov.tech/): the service
+- [Good Pass in English](https://good-pass.morgunov.tech/en/): the same page, English from the start
 - [Source code](https://github.com/morgunovtech/good-pass): the GitHub repository, MIT license
 - [Author](https://s.morgunov.tech/): Semyon Morgunov, who built it
