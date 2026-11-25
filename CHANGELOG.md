@@ -2,6 +2,14 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.5.1 — 2026-11-25
+
+The footer is the family's, to the letter, and the menus take the layer's v1.5.0 look. Nothing else changes.
+
+- **Footer** (`public/index.html`, `public/404.html`): name · year · the build mark, then the privacy line. The build mark is the version, `v1.5.1`, a link to `CHANGELOG.md` in this repository on GitHub: the rule of the family ("Build mark" in `ds/v1/USAGE.md`, about-me-page v1.5.0). It replaces the "Open source" link, which led to the same repository; the 404 page had neither. `test/pages.test.js` checks the footer of both pages and that `package.json` names the top entry of this file, so the number in the footer cannot lag behind a release.
+- **From the layer**: `components.css` at its new hash and a fresh copy of `chrome.js` (the test pins its hash). In the menus the selected item is a round mark before its name instead of orange text in an orange frame, and a menu button clicked with the mouse no longer gets the keyboard focus ring (it stays for the keyboard).
+- The string `footer_opensource` is gone; the service worker cache is `goodpass-v13`.
+
 ## 1.5.0 — 2026-11-25
 
 Good Pass wears the family chrome of morgunov.tech: a bar with the service mark, the language and theme menus where the other services have them, the family footer. The analyzer, the generator and the API do not change.

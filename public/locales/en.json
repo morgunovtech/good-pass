@@ -92,7 +92,6 @@
   "faq_q8": "What are rainbow tables?",
   "faq_a8": "Rainbow tables are precomputed hash tables for fast reverse password lookup. Defense: using a salt (random addition) during hashing makes rainbow tables useless.",
   "footer_text": "Remember passwords as phrases, add rare characters, and use a password manager \u2014 that way you keep both convenience and security.",
-  "footer_opensource": "Open source",
   "footer_privacy": "The password is not logged or stored",
   "mnemonic_prefix": "Imagine:",
   "meta_title": "Good Pass \u2014 password strength check",

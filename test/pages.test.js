@@ -450,8 +450,21 @@ describe('Pages static files', () => {
     // only). The design system names that file by the first eight hex digits of its SHA-1; when
     // the copy is updated, this is the number to change.
     const bytes = await readFile(new URL('../public/chrome.js', import.meta.url));
-    assert.equal(createHash('sha1').update(bytes).digest('hex').slice(0, 8), 'ade46cf8');
+    assert.equal(createHash('sha1').update(bytes).digest('hex').slice(0, 8), '57a9beca');
   });
+
+  // The footer is the family's, to the letter: name · year · the build mark (the version, a link
+  // to CHANGELOG.md on GitHub), then the privacy line, and nothing else.
+  for (const page of ['index.html', '404.html']) {
+    it(`${page}: the family footer with the build mark`, async () => {
+      const html = await readFile(new URL(`../public/${page}`, import.meta.url), 'utf8');
+      const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+      const top = /^## (\d+\.\d+\.\d+) — /m.exec(await readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8'))[1];
+      assert.equal(version, top, 'package.json names the top entry of CHANGELOG.md');
+      const foot = /<footer class="v4-foot">([\s\S]*?)<\/footer>/.exec(html)[1].replace(/\s+/g, ' ').trim();
+      assert.equal(foot, `<span>morgunov.tech / good pass · 2026 · <a class="v4-build" href="https://github.com/morgunovtech/good-pass/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">v${version}</a></span> <span class="v4-foot-privacy" data-i18n="footer_privacy">Пароль не логируется и не хранится</span>`);
+    });
+  }
 
   it('styles.css keeps no chrome of its own', async () => {
     const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
