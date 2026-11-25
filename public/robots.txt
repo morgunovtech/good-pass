@@ -1,6 +1,8 @@
-# Content signals: search, AI answers and AI training may use this site; see https://contentsignals.org
+# Content signals: AI answers and AI training may use this site, search results may not — the owner
+# hides the site from search engines while it is not ready (2026-11-25); see https://contentsignals.org
+# Every crawler stays allowed: a crawler has to fetch a page to see its noindex (X-Robots-Tag in
+# _headers, the robots meta in index.html); a Disallow would hide that and keep stale results.
+# There is no sitemap: a sitemap of noindex pages would only ask search engines to index them.
 User-agent: *
 Allow: /
-Content-Signal: search=yes, ai-input=yes, ai-train=yes
-
-Sitemap: https://good-pass.morgunov.tech/sitemap.xml
+Content-Signal: search=no, ai-input=yes, ai-train=yes

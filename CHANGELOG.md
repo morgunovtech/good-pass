@@ -2,6 +2,17 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.4.3 — 2026-11-25
+
+The owner hides the site from search engines while it is not ready: https://good-pass.morgunov.tech stays up for people who have the link, but is not indexed, and is off every showcase. Reversible: each piece below is one line to drop. The analyzer, the API and what leaves the browser do not change.
+
+- `public/_headers` sends `X-Robots-Tag: noindex` on every path, not only on `/404.html` and the technical pages.dev host as before; those two rules stay, so lifting the site-wide one later leaves them in place (Cloudflare joins repeated values with a comma, which this header allows). `src/server.js` sends the same header locally; `test/pages.test.js` checks the `/*` block and the server on `/`, `/en/`, `/404.html`, `robots.txt`, `llms.txt` and `/healthz`.
+- `index.html` carries `<meta name="robots" content="noindex">`. `/en/` inherits it: `src/englishPage.js` rewrites other tags, and the Pages Function passes the static headers through; the tests check both.
+- `robots.txt` keeps every crawler allowed, since a crawler has to fetch a page to see its `noindex` (a `Disallow` would hide that and keep stale results), drops the `Sitemap:` line and gives the Content Signals `search=no, ai-input=yes, ai-train=yes` (https://contentsignals.org): the AI uses the owner allowed on 2026-11-24 stand, only search is withdrawn.
+- `sitemap.xml` is removed: a sitemap of `noindex` pages would only ask search engines to index them, and Search Console reports such a sitemap as an error. The test that expected it now expects no `Sitemap:` line and a 404 for `/sitemap.xml`.
+- Service worker cache `goodpass-v11`, so returning visitors get the page with the meta tag.
+- README (EN/RU): the status line says the site is not indexed on purpose; the search-engine paragraph, the tests and the deploy notes follow; the Yandex Webmaster, Search Console and Bing registrations stay listed under «outside the repo», and the owner may remove the properties later. `package-lock.json` names the version too (it had stayed at 1.4.1).
+
 ## 1.4.2 — 2026-11-24
 
 Docs-only patch: the README says what the page does, not more. The page, the API and what leaves the browser do not change.

@@ -1,6 +1,6 @@
 {
   "name": "good-pass",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Password strength educational web service",
   "license": "MIT",
   "type": "module",

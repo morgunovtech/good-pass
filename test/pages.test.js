@@ -176,7 +176,12 @@ describe('Pages Function: GET /en/', () => {
       fetch: async (url) => {
         assetsAsked.push(String(url));
         return new Response(indexHtml, {
-          headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP, ETag: '"index"' }
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Security-Policy': CSP,
+            'X-Robots-Tag': 'noindex',
+            ETag: '"index"'
+          }
         });
       }
     }
@@ -207,10 +212,12 @@ describe('Pages Function: GET /en/', () => {
     assert.equal(res.status, 200);
     assert.deepEqual(assetsAsked, ['https://good-pass.morgunov.tech/']);
     assert.equal(res.headers.get('content-security-policy'), CSP);
+    assert.equal(res.headers.get('x-robots-tag'), 'noindex', 'the site-wide noindex comes along');
     assert.equal(res.headers.get('etag'), null, 'not the ETag of the Russian page');
     const html = await res.text();
     const head = html.slice(0, html.indexOf('</head>'));
     assert.match(head, /<html lang="en" data-theme="auto">/);
+    assert.equal(meta(head, 'robots'), 'noindex', 'the rewrite leaves the robots meta alone');
     assert.match(head, /<link rel="canonical" href="https:\/\/good-pass\.morgunov\.tech\/en\/" \/>/);
     assert.equal(meta(head, 'og:url'), 'https://good-pass.morgunov.tech/en/');
     assert.equal(meta(head, 'og:title'), EN.title);
@@ -284,17 +291,35 @@ describe('Pages static files', () => {
     assert.equal(pagesCsp, res.headers.get('content-security-policy'));
   });
 
+  // The owner hides the site from search engines while it is not ready
+  // (2026-11-25). The next three tests keep that state until it is lifted on
+  // purpose: noindex on every path, no sitemap, search=no in the content signals.
+  it('_headers and the Express server send noindex on every path', async () => {
+    const headers = await readFile(new URL('../public/_headers', import.meta.url), 'utf8');
+    // The /* block: from its line to the first blank line.
+    const block = headers.match(/^\/\*\n([\s\S]*?)\n\n/m);
+    assert.ok(block, 'public/_headers has no /* block');
+    assert.match(block[1], /^ {2}X-Robots-Tag: noindex$/m);
+    for (const path of ['/', '/en/', '/404.html', '/robots.txt', '/llms.txt', '/healthz']) {
+      const res = await fetch(`${baseUrl}${path}`);
+      assert.equal(res.headers.get('x-robots-tag'), 'noindex', path);
+    }
+  });
+
   it('_headers keeps search engines off the technical pages.dev host', async () => {
     const headers = await readFile(new URL('../public/_headers', import.meta.url), 'utf8');
     assert.match(headers, /^https:\/\/:project\.pages\.dev\/\*\n {2}X-Robots-Tag: noindex$/m);
   });
 
-  it('robots.txt points to the sitemap, which lists the home page', async () => {
+  it('robots.txt lets crawlers in, names no sitemap, and none is served', async () => {
+    // A crawler has to fetch a page to see its noindex: a Disallow would hide
+    // that and keep stale results. A sitemap of noindex pages would only ask
+    // search engines to index them, so there is none.
     const robots = await (await fetch(`${baseUrl}/robots.txt`)).text();
-    assert.match(robots, /^Sitemap: https:\/\/good-pass\.morgunov\.tech\/sitemap\.xml$/m);
-    const sitemap = await fetch(`${baseUrl}/sitemap.xml`);
-    assert.equal(sitemap.status, 200);
-    assert.match(await sitemap.text(), /<loc>https:\/\/good-pass\.morgunov\.tech\/<\/loc>/);
+    assert.match(robots, /^Allow: \/$/m);
+    assert.doesNotMatch(robots, /^Disallow:/m);
+    assert.doesNotMatch(robots, /^Sitemap:/m);
+    assert.equal((await fetch(`${baseUrl}/sitemap.xml`)).status, 404);
   });
 
   it('robots.txt gives every group the same content signals', async () => {
@@ -302,10 +327,18 @@ describe('Pages static files', () => {
     const groups = robots.split(/\n(?=User-agent:)/).filter((g) => g.startsWith('User-agent:'));
     assert.ok(groups.length >= 1);
     for (const group of groups) {
-      assert.match(group, /^Content-Signal: search=yes, ai-input=yes, ai-train=yes$/m, group.split('\n')[0]);
+      assert.match(group, /^Content-Signal: search=no, ai-input=yes, ai-train=yes$/m, group.split('\n')[0]);
     }
-    // One signal line per group: search, AI answers and AI training, by the owner's decision.
+    // One signal line per group: AI answers and AI training yes (the owner's
+    // decision of 2026-11-24), search no while the site is hidden.
     assert.equal((robots.match(/^Content-Signal:/gm) || []).length, groups.length);
+  });
+
+  it('index.html and 404.html carry the noindex meta', async () => {
+    for (const page of ['index.html', '404.html']) {
+      const html = await readFile(new URL(`../public/${page}`, import.meta.url), 'utf8');
+      assert.match(html, /<meta name="robots" content="noindex" \/>/, page);
+    }
   });
 
   it('llms.txt is served as text and links the site, the repository and the author', async () => {
