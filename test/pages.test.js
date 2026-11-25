@@ -1,6 +1,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 import { onRequestPost as analyze } from '../functions/api/v1/analyze.js';
 import { onRequestPost as breachCheck } from '../functions/api/v1/breach-check.js';
@@ -418,4 +419,60 @@ describe('Pages static files', () => {
       assert.doesNotMatch(html, /\son[a-z]+\s*=/i, 'inline event handler');
     });
   }
+
+  // The family chrome of morgunov.tech (ds/v1/USAGE.md in about-me-page, "Service
+  // chrome"): the bar with the service mark, the language and theme menus and the
+  // footer are the guide's markup on both pages, styled by components.css.
+  for (const page of ['index.html', '404.html']) {
+    it(`${page} carries the family chrome`, async () => {
+      const html = await readFile(new URL(`../public/${page}`, import.meta.url), 'utf8');
+      for (const part of ['<body class="v4-page">', '<a href="#main" class="skip-link"', '<div class="v4-root">', '<header class="v4-bar"',
+        '<a class="v4-service" href="https://s.morgunov.tech/">', '<div class="v4-dropdown v4-lang">', '<div class="v4-dropdown v4-theme">',
+        '<main id="main"', '<footer class="v4-foot">']) {
+        assert.ok(html.includes(part), part);
+      }
+      assert.deepEqual([...html.matchAll(/data-theme-value="([a-z-]+)"/g)].map((m) => m[1]), ['light', 'dark', 'auto', 'high-contrast']);
+      assert.deepEqual([...html.matchAll(/class="v4-menu-item v4-lang-link"[^>]*data-lang="([a-z]+)"/g)].map((m) => m[1]), ['ru', 'en']);
+      assert.ok(html.indexOf('v4-dropdown v4-lang') < html.indexOf('v4-dropdown v4-theme'), 'language, then theme at the edge');
+      // fonts → tokens → base → components from the design system's origin, pinned by content hash.
+      const sheets = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)" \/>/g)].map((m) => m[1]);
+      assert.deepEqual(sheets.map((href) => href.replace(/\?v=[0-9a-f]{8}$/, '')),
+        ['fonts', 'tokens', 'base', 'components'].map((name) => `https://s.morgunov.tech/ds/v1/${name}.css`).concat('/styles.css'));
+      // The theme is set before the stylesheets arrive; the chrome's script is this origin's file.
+      assert.ok(html.indexOf('<script src="/theme-init.js"></script>') > 0);
+      assert.ok(html.indexOf('<script src="/theme-init.js"></script>') < html.indexOf('rel="stylesheet"'));
+      assert.ok(html.includes('<script src="/chrome.js" defer></script>'));
+    });
+  }
+
+  it('chrome.js is the design system\'s script, byte for byte', async () => {
+    // A copy of https://s.morgunov.tech/ds/v1/chrome.js (the CSP allows scripts from this origin
+    // only). The design system names that file by the first eight hex digits of its SHA-1; when
+    // the copy is updated, this is the number to change.
+    const bytes = await readFile(new URL('../public/chrome.js', import.meta.url));
+    assert.equal(createHash('sha1').update(bytes).digest('hex').slice(0, 8), 'ade46cf8');
+  });
+
+  it('styles.css keeps no chrome of its own', async () => {
+    const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+    for (const own of [/^\.footer\b/m, /\.footer-controls/, /\.skip-nav/, /\.btn-primary/]) assert.doesNotMatch(css, own);
+  });
+
+  it('theme-init.js moves the theme saved before 1.5.0 to the family key', async () => {
+    const code = await readFile(new URL('../public/theme-init.js', import.meta.url), 'utf8');
+    const run = (stored) => {
+      const store = new Map(Object.entries(stored));
+      const attrs = {};
+      const env = {
+        document: { documentElement: { setAttribute: (name, value) => { attrs[name] = value; } } },
+        localStorage: { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, v), removeItem: (k) => store.delete(k) },
+        window: { matchMedia: () => ({ matches: false }) }
+      };
+      new Function('document', 'localStorage', 'window', code)(env.document, env.localStorage, env.window);
+      return { attrs, store: Object.fromEntries(store) };
+    };
+    assert.deepEqual(run({ 'good-pass-theme': 'dark' }), { attrs: { 'data-theme': 'dark', 'data-theme-preference': 'dark' }, store: { 'theme-preference': 'dark' } });
+    assert.deepEqual(run({ 'theme-preference': 'high-contrast' }).attrs, { 'data-theme': 'high-contrast', 'data-theme-preference': 'high-contrast' });
+    assert.deepEqual(run({}).attrs, { 'data-theme': 'light', 'data-theme-preference': 'auto' });
+  });
 });

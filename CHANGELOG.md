@@ -2,6 +2,21 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.5.0 — 2026-11-25
+
+Good Pass wears the family chrome of morgunov.tech: a bar with the service mark, the language and theme menus where the other services have them, the family footer. The analyzer, the generator and the API do not change.
+
+- **Why.** The page took colours and type from the design system and had no header at all: the theme was a button in the footer that cycled "Auto / Light / Dark" as a word, the language a button next to it. A visitor coming from s.morgunov.tech or Found You had to look for both. The design-system guide now calls the chrome required for a family service (`ds/v1/USAGE.md` in about-me-page, "Service chrome", v1.4.0).
+- **The bar** (`public/index.html`, `public/404.html`): `MORGUNOV.TECH / GOOD PASS` on the left (the name alone on a phone), the language menu (`RU ⌄`, items are links to `/` and `/en/`, switched in place), then the theme icon at the very edge with four themes in the family's order: light, dark, auto, high contrast. High contrast is new here; the strength scale uses its dark values on it. `components.css` is linked next to `fonts`, `tokens` and `base`; the files move to the hashes of about-me-page v1.3.0 and v1.4.0, so captions are 12px (they were 11px and 10px).
+- **The script.** `public/chrome.js` runs the menus and the theme: a byte-for-byte copy of `https://s.morgunov.tech/ds/v1/chrome.js`, kept on this origin because the CSP allows scripts from here only (the CSP does not change). `public/theme-init.js`, a plain script in the `<head>`, sets the theme before first paint, which the page did not do before, and moves the choice saved under `good-pass-theme` to the family key `theme-preference`. `public/theme.js` is gone.
+- **Footer and button.** The footer is the family's: name · year · "Open source" on the left, "The password is not logged or stored" on the right; the advice sentence moved to the end of the page. "Generate" in the generator is the family's `.v4-btn`. The tabs and the compact buttons inside rows stay the page's own: the family has no small button yet.
+- **Phones.** In 1.4.4 the page was wider than a phone screen (407px of content in a 375px window, so it scrolled sideways): a grid column is as wide as its widest child. The layout and the password form now use `minmax(0, 1fr)` and the field shrinks with the screen; no element leaves the window at 320px and 375px.
+- **Link previews.** `og-image.png` (Russian, for `/`) and `og-image-en.png` (English, for `/en/`) are renders of the family's share-card template instead of this repo's own `tools/og-card.html`, which is removed; README says where a card is changed.
+- **Strings.** `skip_nav` leads to the page content and says so; `chrome_change_language`, `chrome_change_theme`, `theme_high_contrast`, `footer_privacy` are new; `aria_lang` and `theme_aria` are gone. The service worker cache is `goodpass-v12` with `theme-init.js` and `chrome.js` in place of `theme.js`.
+- **Tests.** `test/pages.test.js` checks the parts of the chrome on both pages, the order of the themes and of the stylesheets, the hash of the script copy, that `styles.css` keeps no header or footer of its own, and the move of the old theme key.
+
+Checked in a browser as well: every element of the bar and the footer computes the same styles as a page built from the guide's markup (20 elements × 3 widths × 3 themes, 0 differences); the page's own elements differ from 1.4.4 only where intended (captions, the primary button, the phone layout).
+
 ## 1.4.4 — 2026-11-25
 
 The deleted sitemap stops coming back from Cloudflare's cache. Nothing else changes.

@@ -83,9 +83,8 @@ describe('interface strings (public/locales/)', () => {
       for (const [, key] of text.matchAll(/\bt\('([a-z0-9_]+)'/g)) used.add(key);
       for (const [, key] of text.matchAll(/data-i18n(?:-placeholder|-label)?="([^"]+)"/g)) used.add(key);
     }
-    // Keys built at run time: history labels by score code, the theme button.
+    // Keys built at run time: history labels by score code.
     for (const code of Object.keys(ruApi.score)) used.add(`score_${code}`);
-    for (const mode of ['auto', 'light', 'dark']) used.add(`theme_${mode}`);
 
     assert.ok(used.size > 100);
     for (const key of used) {

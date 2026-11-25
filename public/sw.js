@@ -1,4 +1,4 @@
-const CACHE_NAME = 'goodpass-v11';
+const CACHE_NAME = 'goodpass-v12';
 const STATIC_ASSETS = [
   '/',
   '/en/',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   '/generator.js',
   '/wordlists.js',
   '/history.js',
-  '/theme.js',
+  '/theme-init.js',
+  '/chrome.js',
   '/shortcuts.js',
   '/trainer.js',
   '/export.js',
