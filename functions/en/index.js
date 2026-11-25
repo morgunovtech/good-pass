@@ -1,6 +1,6 @@
 // Cloudflare Pages Function for /en/: public/index.html with English link-preview
-// tags (src/englishPage.js). The headers from public/_headers, the CSP among
-// them, come with the static page it rewrites.
+// tags (src/englishPage.js). The headers from public/_headers, the CSP and
+// X-Robots-Tag among them, come with the static page it rewrites.
 import { englishPage } from '../../src/englishPage.js';
 
 export async function onRequest({ request, env, next }) {

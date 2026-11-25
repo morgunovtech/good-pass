@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="meta_title">Good Pass — проверка стойкости пароля</title>
     <meta name="description" content="Проверьте стойкость пароля: оценка энтропии, время перебора, советы по улучшению." />
+    <!-- The owner hides the site from search engines while it is not ready (2026-11-25): the same
+         noindex as the X-Robots-Tag in _headers. /en/ inherits it (src/englishPage.js leaves this
+         tag alone). Remove it together with that header line to be indexed again. -->
+    <meta name="robots" content="noindex" />
     <link rel="canonical" href="https://good-pass.morgunov.tech/" />
     <!-- /en/ is the same page with English link-preview tags (src/englishPage.js). -->
     <link rel="alternate" hreflang="ru" href="https://good-pass.morgunov.tech/" />

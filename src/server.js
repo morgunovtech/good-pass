@@ -43,6 +43,9 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Permissions-Policy', 'interest-cohort=()');
+  // The owner hides the site from search engines while it is not ready
+  // (2026-11-25): the header public/_headers sends on every path in production.
+  res.setHeader('X-Robots-Tag', 'noindex');
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; font-src https://s.morgunov.tech; style-src 'self' https://s.morgunov.tech; img-src 'self' data: blob:; script-src 'self'; connect-src 'self'; worker-src 'self'"
