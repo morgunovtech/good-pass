@@ -2,6 +2,16 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.5.2 — 2026-11-25
+
+Accessibility fixes from the SonarQube Cloud triage, released so that returning visitors get them. The analyzer, the generator's output and the API do not change.
+
+- **The password field no longer takes focus when the page opens** (`autofocus` is removed from `public/index.html`): a screen reader starts at the top of the page instead of in the middle of it, and a phone does not raise the keyboard on arrival. Click or tab into the field to type.
+- **Generator**: the labels "Length", "Word count", "Separator" and "Dictionary theme" belong to their controls (`for=`), so a screen reader names each slider and list, and a click on the label focuses its control.
+- **Trainer**: the input has an accessible name, the same translated text as its placeholder (`aria-label`, switched with the language).
+- These three reached `main` earlier today (#30) without a release; the service worker serves the page cache-first, so visitors who had been here before kept the old `index.html`. The cache is now `goodpass-v14`, which delivers them.
+- Internals: the two fire-and-forget calls in `public/app.js` are marked `void`, `Number.parseInt` in `src/breachCheck.js`; CI installs with `npm ci --ignore-scripts` and every action in the workflows is pinned to a commit SHA with the version in a comment (Dependabot keeps updating them).
+
 ## 1.5.1 — 2026-11-25
 
 The footer is the family's, to the letter, and the menus take the layer's v1.5.0 look. Nothing else changes.
