@@ -53,7 +53,7 @@ document.addEventListener('langchange', () => {
   if (controller) controller.abort();
   clearTimeout(debounceTimer);
   strengthLabel.textContent = t('status_analyzing');
-  analyzePassword(password, { record: false });
+  void analyzePassword(password, { record: false });
 });
 
 // --- Main tabs ---
@@ -150,8 +150,8 @@ async function analyzePassword(password, { record = true } = {}) {
     renderResult(password, result);
     if (record) addToHistory({ password, score: result.score, entropyBits: result.entropyBits });
 
-    // Breach check (async, non-blocking).
-    checkBreach(password, result);
+    // Breach check (async, non-blocking; it reports its own failures).
+    void checkBreach(password, result);
   } catch (error) {
     if (error.name === 'AbortError') return;
     strengthLabel.textContent = t('status_error');
