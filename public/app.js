@@ -1,6 +1,5 @@
 import { initGenerator } from './generator.js';
 import { initHistory, addToHistory } from './history.js';
-import { initTheme } from './theme.js';
 import { initShortcuts } from './shortcuts.js';
 import { initTrainer } from './trainer.js';
 import { initExport } from './export.js';
@@ -38,7 +37,6 @@ const SCORE_LEVEL = { very_weak: 1, weak: 1, medium: 2, strong: 3, excellent: 4 
 await initI18n();
 initGenerator();
 initHistory();
-initTheme();
 initShortcuts();
 initTrainer();
 initExport();

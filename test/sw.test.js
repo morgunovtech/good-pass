@@ -42,7 +42,7 @@ describe('service worker (public/sw.js)', () => {
     // 'self'), which used to strip the page of the design system's styles.
     const { handlers, fetched } = await loadWorker();
     for (const url of [
-      'https://s.morgunov.tech/ds/v1/tokens.css?v=fa7fc139',
+      'https://s.morgunov.tech/ds/v1/tokens.css?v=5629caeb',
       'https://s.morgunov.tech/ds/v1/fonts/IBMPlexSans-Regular.woff2'
     ]) {
       const event = fetchEvent(url);

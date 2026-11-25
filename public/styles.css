@@ -27,7 +27,8 @@
   --accent-excellent: var(--strength-4);
 }
 
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-theme="high-contrast"] {
   --strength-0: #ff7b6b;
   --strength-1: #ff6a2e;
   --strength-2: #e8b450;
@@ -51,17 +52,19 @@
    blocked by the CSP); keep it winning over the display of .badge, .gen-mode… */
 [hidden] { display: none !important; }
 
+/* The body is the family's (base.css, body.v4-page), so the bar, the menus and
+   the footer measure exactly as on s.morgunov.tech. The family shell
+   (.v4-root, up to 1280px) is this page's one column: 960px of content plus
+   the shell's side padding. The page's own blocks keep their reading size. */
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--v4-sans);
   background: var(--bg);
   color: var(--text);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3rem 1.5rem 4rem;
 }
+.v4-root { max-width: 1072px; }
+.layout, .notfound, .history-sidebar, .modal-overlay { font-size: 1rem; line-height: normal; letter-spacing: normal; }
 
 :focus-visible { outline: 2px solid var(--v4-orange); outline-offset: 2px; }
 
@@ -77,17 +80,14 @@ body {
   color: var(--v4-dim);
 }
 
-.skip-nav {
-  position: absolute; left: -9999px; top: 0; z-index: 100;
-  padding: 0.5rem 1rem; background: var(--v4-fg); color: var(--v4-on-fg);
-  font-weight: 500; text-decoration: none;
-}
-.skip-nav:focus { left: 50%; transform: translateX(-50%); }
+/* minmax(0, 1fr): a grid column is otherwise as wide as its widest child, and on a
+   phone the page scrolled sideways (407px of content in a 375px window in 1.4.4). */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
 
-.layout { width: min(960px, 100%); display: grid; gap: 2.5rem; }
-
-/* === Buttons: the DS .v4-btn shape === */
-.main-tab, .gen-tab, .btn-action, .btn-primary, .btn-icon, .toggle-visibility {
+/* === Buttons. The primary action is the family's .v4-btn (components.css).
+   The tabs and the compact buttons inside rows are the page's own: the family
+   has no small button yet. === */
+.main-tab, .gen-tab, .btn-action, .btn-icon, .toggle-visibility {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 0.5rem 0.9rem; min-height: 34px;
   font-family: inherit; font-size: 12px; font-weight: 500;
@@ -103,12 +103,6 @@ body {
 .main-tab.active, .gen-tab.active {
   background: var(--v4-fg); color: var(--v4-on-fg); border-color: var(--v4-fg);
 }
-.btn-primary {
-  background: var(--v4-orange); color: var(--v4-on-accent); border-color: var(--v4-orange);
-  min-height: 40px; padding: 0.6rem 1.1rem;
-}
-.btn-primary:hover { filter: brightness(1.06); }
-
 /* === Main tabs === */
 .main-tabs { display: flex; gap: 0.5rem; align-items: center; }
 .btn-history-toggle { margin-left: auto; }
@@ -121,12 +115,13 @@ body {
 .hero h1 { margin-top: 0; font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.15; font-weight: 500; letter-spacing: -0.01em; }
 .hero p { color: var(--muted); font-size: 1.05rem; line-height: 1.7; }
 
-.password-form { display: grid; gap: 1rem; margin-top: 2rem; }
+.password-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 2rem; }
 
 .input-wrapper { position: relative; display: flex; flex-direction: column; }
 .password-form input[type="password"],
 .password-form input[type="text"] {
   font-family: var(--v4-mono); font-size: 1.15rem;
+  width: 100%; min-width: 0;
   padding: 0.75rem 6rem 0.75rem 1rem;
   border: 1px solid var(--border); background: var(--input-bg); color: inherit;
   transition: border-color 0.15s ease;
@@ -313,13 +308,14 @@ body {
 }
 .education-card li::marker { color: var(--v4-orange-text); }
 
-/* === Footer === */
-.footer {
-  margin-top: 3rem; max-width: min(720px, 90vw); text-align: center;
-  color: var(--muted); font-size: 0.9rem; line-height: 1.6;
-}
-.footer-controls { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
-.footer-link { text-decoration: none; }
+/* === The 404 page: one heading and one sentence === */
+.notfound h1 { margin: 0 0 1rem; font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.15; font-weight: 500; letter-spacing: -0.01em; }
+.notfound p { margin: 0; color: var(--muted); font-size: 1.05rem; line-height: 1.7; }
+.notfound a { color: var(--v4-fg); text-decoration-color: var(--v4-line); text-underline-offset: 3px; transition: color 0.15s ease, text-decoration-color 0.15s ease; }
+.notfound a:hover, .notfound a:focus-visible { color: var(--v4-orange-text); text-decoration-color: var(--v4-orange-text); }
+
+/* === The note under the page (the footer itself is the family's .v4-foot) === */
+.page-note { margin: 0; max-width: 62ch; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
 /* === Trainer modal === */
 .modal-overlay {
@@ -356,7 +352,6 @@ body {
 
 /* === Responsive === */
 @media (max-width: 720px) {
-  body { padding: 2rem 1rem 3rem; }
   .password-actions { flex-direction: column; align-items: flex-start; }
   .main-tabs { flex-wrap: wrap; }
   .history-sidebar { width: 100%; }

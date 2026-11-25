@@ -3,24 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/theme-init.js"></script>
     <meta name="robots" content="noindex" />
     <title data-i18n="notfound_page_title">Страница не найдена — Good Pass</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23d9531e'/><text x='16' y='23' font-family='monospace' font-size='20' text-anchor='middle' fill='%2314110d'>G</text></svg>" />
     <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/fonts.css?v=64eea157" />
-    <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/tokens.css?v=fa7fc139" />
+    <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/tokens.css?v=5629caeb" />
     <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/base.css?v=0e404315" />
+    <link rel="stylesheet" href="https://s.morgunov.tech/ds/v1/components.css?v=4621707b" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <main>
+  <body class="v4-page">
+    <a href="#main" class="skip-link" data-i18n="skip_nav">Перейти к основному содержимому</a>
+    <div class="v4-root">
+      <!-- The family chrome of morgunov.tech (ds/v1/USAGE.md in about-me-page, "Service chrome"):
+           the bar with the service mark, the language and theme menus. The markup is the guide's;
+           chrome.js runs the menus and the theme, i18n.js puts the words in the page's language. -->
+      <header class="v4-bar" id="top">
+        <a class="v4-service" href="https://s.morgunov.tech/"><span class="v4-service-family">morgunov.tech</span><span class="v4-service-sep" aria-hidden="true">/</span><span class="v4-service-name">Good Pass</span></a>
+        <div class="v4-bar-right">
+          <div class="v4-dropdown v4-lang">
+            <button class="v4-bar-btn v4-lang-btn" type="button" aria-haspopup="menu" aria-controls="lang-menu" id="lang-toggle" aria-label="RU — сменить язык"><span id="lang-code">RU</span><svg class="v4-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg></button>
+            <div class="v4-menu" id="lang-menu" role="menu" aria-labelledby="lang-toggle">
+              <a class="v4-menu-item v4-lang-link" role="menuitemradio" aria-checked="true" href="/" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+              <a class="v4-menu-item v4-lang-link" role="menuitemradio" aria-checked="false" href="/en/" hreflang="en" lang="en" data-lang="en">English</a>
+            </div>
+          </div>
+          <div class="v4-dropdown v4-theme">
+            <button class="v4-icon-btn" type="button" aria-haspopup="menu" aria-controls="theme-menu" id="theme-toggle" aria-label="Сменить тему оформления" data-i18n-label="chrome_change_theme">
+              <svg class="v4-icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4"></path></svg>
+              <svg class="v4-icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9A6 6 0 1 1 7 2.5a4.5 4.5 0 0 0 6.5 6.5z"></path></svg>
+              <svg class="v4-icon-contrast" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M8 2v12a6 6 0 0 0 0-12z" fill="currentColor"></path></svg>
+            </button>
+            <div class="v4-menu v4-theme-menu" id="theme-menu" role="menu" aria-labelledby="theme-toggle">
+              <button class="v4-menu-item v4-theme-btn" type="button" role="menuitemradio" data-theme-value="light" aria-checked="false" data-i18n="theme_light">Светлая</button>
+              <button class="v4-menu-item v4-theme-btn" type="button" role="menuitemradio" data-theme-value="dark" aria-checked="false" data-i18n="theme_dark">Тёмная</button>
+              <button class="v4-menu-item v4-theme-btn" type="button" role="menuitemradio" data-theme-value="auto" aria-checked="false" data-i18n="theme_auto">Авто</button>
+              <button class="v4-menu-item v4-theme-btn" type="button" role="menuitemradio" data-theme-value="high-contrast" aria-checked="false" data-i18n="theme_high_contrast">Высокий контраст</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+    <main id="main" class="notfound">
       <h1 data-i18n="notfound_title">Страница не найдена</h1>
       <p><span data-i18n="notfound_text">Такого адреса на Good Pass нет. Проверить пароль можно на</span> <a href="/" data-i18n="notfound_link">главной странице</a>.</p>
     </main>
-    <footer class="footer">
-      <div class="footer-controls">
-        <button class="btn-icon" id="btn-lang" aria-label="Сменить язык" data-i18n-label="aria_lang">EN</button>
-      </div>
+    <footer class="v4-foot">
+      <span>morgunov.tech / good pass · 2026</span>
+      <span class="v4-foot-privacy" data-i18n="footer_privacy">Пароль не логируется и не хранится</span>
     </footer>
+    </div>
+    <script src="/chrome.js" defer></script>
     <!-- The same language as the main page: the saved choice or the browser's. -->
     <script type="module" src="/404.js"></script>
   </body>

@@ -47,15 +47,23 @@ export async function initI18n() {
   await loadLocale(currentLang);
   applyAll();
 
-  document.getElementById('btn-lang')?.addEventListener('click', async () => {
-    currentLang = currentLang === 'ru' ? 'en' : 'ru';
-    saveLang(currentLang);
-    const next = pathForLang(location.pathname, currentLang);
-    if (next) history.replaceState(null, '', next + location.search + location.hash);
-    await loadLocale(currentLang);
-    applyAll();
-    // Modules that render text themselves (analysis, history, theme) redraw.
-    document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
+  // The language menu is the family chrome's (chrome.js opens and closes it).
+  // Its items are links to / and /en/, but the page switches in place instead
+  // of loading again, and the address follows.
+  document.querySelectorAll('#lang-menu [data-lang]').forEach((item) => {
+    item.addEventListener('click', async (event) => {
+      event.preventDefault();
+      const lang = item.dataset.lang;
+      if (!LANGS.includes(lang) || lang === currentLang) return;
+      currentLang = lang;
+      saveLang(currentLang);
+      const next = pathForLang(location.pathname, currentLang);
+      if (next) history.replaceState(null, '', next + location.search + location.hash);
+      await loadLocale(currentLang);
+      applyAll();
+      // Modules that render text themselves (analysis, history) redraw.
+      document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
+    });
   });
 }
 
@@ -90,8 +98,15 @@ function applyAll() {
     el.setAttribute('aria-label', t(el.dataset.i18nLabel));
   });
 
-  const btn = document.getElementById('btn-lang');
-  if (btn) btn.textContent = currentLang === 'ru' ? 'EN' : 'RU';
+  // The language button shows the current code, as on s.morgunov.tech; the menu
+  // names the languages in their own words and marks the current one.
+  const code = currentLang.toUpperCase();
+  const codeEl = document.getElementById('lang-code');
+  if (codeEl) codeEl.textContent = code;
+  document.getElementById('lang-toggle')?.setAttribute('aria-label', `${code} — ${t('chrome_change_language')}`);
+  document.querySelectorAll('#lang-menu [data-lang]').forEach((item) => {
+    item.setAttribute('aria-checked', String(item.dataset.lang === currentLang));
+  });
 
   document.documentElement.lang = currentLang;
 }
