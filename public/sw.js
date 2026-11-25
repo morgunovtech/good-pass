@@ -1,4 +1,4 @@
-const CACHE_NAME = 'goodpass-v13';
+const CACHE_NAME = 'goodpass-v14';
 const STATIC_ASSETS = [
   '/',
   '/en/',
