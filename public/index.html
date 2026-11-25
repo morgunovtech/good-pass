@@ -139,7 +139,7 @@
         <form class="password-form" autocomplete="off">
           <label for="password-input" data-i18n="label_password">Ваш пароль</label>
           <div class="input-wrapper">
-            <input id="password-input" name="password" type="password" maxlength="128" placeholder="Например, Гроза-Моря#2045" data-i18n-placeholder="placeholder_password" autocomplete="new-password" autofocus />
+            <input id="password-input" name="password" type="password" maxlength="128" placeholder="Например, Гроза-Моря#2045" data-i18n-placeholder="placeholder_password" autocomplete="new-password" />
             <button type="button" class="toggle-visibility" id="toggle-visibility" aria-label="Показать пароль" aria-pressed="false" data-i18n="btn_show">Показать</button>
             <div class="inline-strength-bar" id="inline-bar"></div>
           </div>
@@ -209,7 +209,7 @@
         <!-- Random mode -->
         <div id="gen-random" class="gen-mode">
           <div class="gen-control">
-            <label data-i18n="gen_length">Длина</label>
+            <label for="gen-length" data-i18n="gen_length">Длина</label>
             <input type="range" id="gen-length" min="8" max="64" value="20" />
             <span id="gen-length-value">20</span>
           </div>
@@ -224,12 +224,12 @@
         <!-- Passphrase mode -->
         <div id="gen-passphrase" class="gen-mode" hidden>
           <div class="gen-control">
-            <label data-i18n="gen_words">Количество слов</label>
+            <label for="gen-words" data-i18n="gen_words">Количество слов</label>
             <input type="range" id="gen-words" min="3" max="6" value="4" />
             <span id="gen-words-value">4</span>
           </div>
           <div class="gen-control">
-            <label data-i18n="gen_separator">Разделитель</label>
+            <label for="gen-separator" data-i18n="gen_separator">Разделитель</label>
             <select id="gen-separator">
               <option value="hyphen" data-i18n="sep_hyphen">Дефис (-)</option>
               <option value="dot" data-i18n="sep_dot">Точка (.)</option>
@@ -238,7 +238,7 @@
             </select>
           </div>
           <div class="gen-control">
-            <label data-i18n="gen_theme">Тема словаря</label>
+            <label for="gen-theme" data-i18n="gen_theme">Тема словаря</label>
             <select id="gen-theme">
               <option value="default" data-i18n="wordlist_default">Универсальный</option>
               <option value="nature" data-i18n="wordlist_nature">Природа</option>
@@ -317,7 +317,7 @@
         </div>
         <p class="trainer-display" id="trainer-display"></p>
         <div id="trainer-chars" class="trainer-chars"></div>
-        <input type="text" id="trainer-input" class="trainer-input" placeholder="Введите пароль по памяти" data-i18n-placeholder="trainer_placeholder" autocomplete="off" />
+        <input type="text" id="trainer-input" class="trainer-input" placeholder="Введите пароль по памяти" data-i18n-placeholder="trainer_placeholder" aria-label="Введите пароль по памяти" data-i18n-label="trainer_placeholder" autocomplete="off" />
         <p id="trainer-result" class="trainer-result"></p>
         <button class="btn-action" id="trainer-reveal" data-i18n="trainer_reveal">Показать ответ</button>
       </div>

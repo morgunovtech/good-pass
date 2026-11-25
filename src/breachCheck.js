@@ -45,7 +45,7 @@ export function parseRangeResponse(text) {
     .filter(Boolean)
     .map((line) => {
       const [suffix, countStr] = line.split(':');
-      return { suffix: suffix.toUpperCase(), count: parseInt(countStr, 10) || 0 };
+      return { suffix: suffix.toUpperCase(), count: Number.parseInt(countStr, 10) || 0 };
     });
 }
 
