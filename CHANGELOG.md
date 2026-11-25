@@ -2,6 +2,12 @@
 
 What changed for the person reading or running the code. Dates are merge dates. 1.2.0 is the first SemVer version: before it the version strings in `package.json` and `src/log.js` were calendar dates that matched no commit, so the two earlier entries are reconstructed from the history. English notes for each version also go to [Releases](https://github.com/morgunovtech/good-pass/releases).
 
+## 1.4.4 — 2026-11-25
+
+The deleted sitemap stops coming back from Cloudflare's cache. Nothing else changes.
+
+- `functions/sitemap.xml.js` answers `/sitemap.xml` with a 404, `Cache-Control: no-store` and `X-Robots-Tag: noindex`. After 1.4.3 removed the file, Cloudflare Pages kept serving the old copy from its asset cache for the week the old `_headers` rule allowed (`s-maxage=604800`); a zone purge does not reach that layer, a Function does — it runs before the static assets. `test/pages.test.js` checks the Function's answer and headers. Delete the Function together with the rest of 1.4.3 when the sitemap comes back.
+
 ## 1.4.3 — 2026-11-25
 
 The owner hides the site from search engines while it is not ready: https://good-pass.morgunov.tech stays up for people who have the link, but is not indexed, and is off every showcase. Reversible: each piece below is one line to drop. The analyzer, the API and what leaves the browser do not change.
