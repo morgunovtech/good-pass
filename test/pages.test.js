@@ -5,6 +5,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { onRequestPost as analyze } from '../functions/api/v1/analyze.js';
 import { onRequestPost as breachCheck } from '../functions/api/v1/breach-check.js';
 import { onRequest as englishPageFunction } from '../functions/en/index.js';
+import { onRequest as sitemapFunction } from '../functions/sitemap.xml.js';
 import { englishPage, EN } from '../src/englishPage.js';
 import { clearCache } from '../src/breachCheck.js';
 import { app } from '../src/server.js';
@@ -320,6 +321,12 @@ describe('Pages static files', () => {
     assert.doesNotMatch(robots, /^Disallow:/m);
     assert.doesNotMatch(robots, /^Sitemap:/m);
     assert.equal((await fetch(`${baseUrl}/sitemap.xml`)).status, 404);
+    // On Pages a Function owns the address, so the old file never comes back
+    // from the asset cache and the 404 is not cached either.
+    const viaFunction = sitemapFunction();
+    assert.equal(viaFunction.status, 404);
+    assert.equal(viaFunction.headers.get('cache-control'), 'no-store');
+    assert.equal(viaFunction.headers.get('x-robots-tag'), 'noindex');
   });
 
   it('robots.txt gives every group the same content signals', async () => {
